@@ -257,7 +257,7 @@ export function TableScreen({ route, navigation }: Props) {
           )}
 
           {/* Table area */}
-          <Animated.View style={{ flex: 1, opacity: dealAnim }}>
+          <Animated.View style={{ flex: 1, minHeight: 0, opacity: dealAnim }}>
             {/* Opponent seats */}
             {opponents.slice(0, 1).map((p) => (
               <SeatView

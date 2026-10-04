@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -100,7 +101,15 @@ function RootNavigator() {
         colors: { ...base.colors, background: colors.background },
       }}
     >
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          // Web: the JS stack's card container doesn't bound screen height,
+          // so flex:1 columns grow unbounded (table overflowed to 1080px in
+          // an 844px viewport). Constrain cards on web only; native is fine.
+          ...(Platform.OS === 'web' ? { cardStyle: { flex: 1, maxHeight: '100vh' } } : null),
+        }}
+      >
         <Stack.Screen name="Tabs" component={Tabs} />
         <Stack.Screen name="Table" component={TableScreen} />
         <Stack.Screen name="PrivateTable" component={PrivateTableScreen} />
