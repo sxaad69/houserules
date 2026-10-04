@@ -63,7 +63,8 @@ function FaceContent({ card, d }: { card: Card; d: { w: number; h: number; font:
 
   if (card.deck === 'uno108') {
     const isWild = card.action === 'wild' || card.action === 'wild4';
-    const bg = isWild ? '#2E2E3E' : UNO_BG[card.color ?? 'red'];
+    // Wilds: deep violet (designed, not flat black) — distinct from the 4 colors.
+    const bg = isWild ? '#2E2157' : UNO_BG[card.color ?? 'red'];
     const label = card.action ? ACTION_LABEL[card.action] : card.rank;
     // Center medallion: white oval, tilted; glyph counter-rotated upright.
     // Wilds show the 4-color quadrant grid instead of a glyph.
@@ -139,13 +140,15 @@ function FaceContent({ card, d }: { card: Card; d: { w: number; h: number; font:
             {isWild ? (
               <View
                 style={{
-                  width: medallionW * 0.52,
-                  height: medallionH * 0.52,
+                  width: medallionW * 0.66,
+                  height: medallionH * 0.66,
                   transform: [{ rotate: '16deg' }],
                   flexDirection: 'row',
                   flexWrap: 'wrap',
                   overflow: 'hidden',
-                  borderRadius: 3,
+                  borderRadius: 4,
+                  borderWidth: 2,
+                  borderColor: 'rgba(255,255,255,0.85)',
                 }}
               >
                 {['#D64545', '#D9A62E', '#3FA34D', '#3D7BE8'].map((c) => (
