@@ -1,0 +1,186 @@
+name: E2E (houserules) — emulator + Maestro
+
+# Per-app device testing for the games track (standalone repo, NOT the palate
+# monorepo): builds a debug APK from the Expo project, boots an Android
+# emulator on the GitHub runner, installs the APK, runs the Maestro smoke
+# flow (with screenshots), uploads screenshots.
+#
+# SETUP REQUIRED BEFORE FIRST RUN: this directory is not a git repo yet.
+# `git init`, add the remote (games-track repo), push — then this workflow
+# runs on pushes touching app/, .maestro/, or itself.
+#
+# DISK BUDGET (modeled upfront — never wall-by-wall; mirrors e2e-palate):
+#   runner ~14 GB free. npm ci ~1.5 + Gradle cold ~2 + system image ~3.5
+#   + Maestro ~0.2 + emulator userdata 2 (capped via -partition-size 2048)
+#   + APK ~0.1 ≈ 9.3 GB. Toolchain pre-clean keeps headroom.
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - '.maestro/**'
+      - '.github/workflows/e2e-houserules.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: android-emulator-houserules
+  cancel-in-progress: false
+
+# actions/cache needs actions:write to SAVE caches (restore works without it,
+# which is why restores silently missed and the repo shows 0 caches).
+# contents:write is needed for the screenshot auto-commit step.
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  e2e:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space (pre-build)
+        run: |
+          df -h / | tail -1
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup \
+            /usr/local/share/powershell /usr/share/swift 2>/dev/null || true
+          sudo rm -rf /usr/local/lib/android/sdk/ndk 2>/dev/null || true
+          sudo docker image prune --all --force 2>/dev/null || true
+          df -h / | tail -1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Prebuild Android project
+        working-directory: app
+        run: npx expo prebuild --platform android --clean
+        env:
+          CI: 'true'
+
+      - name: Bundle JS in debug APK (standalone, no Metro)
+        # assembleDebug skips JS bundling by default (debug is a "debuggable variant"),
+        # producing an APK that redboxes with "Unable to load script". Force bundling.
+        working-directory: app
+        run: |
+          python3 - << 'EOF'
+          p = 'android/app/build.gradle'
+          s = open(p).read()
+          old = "react {\n"
+          new = "react {\n    // CI: bundle JS for debug so the APK runs standalone (no Metro)\n    debuggableVariants.set([])\n"
+          assert old in s, "react block not found"
+          open(p, 'w').write(s.replace(old, new, 1))
+          print("patched debug JS bundling")
+          EOF
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/caches/transforms-4
+            ~/.gradle/wrapper
+          key: gradle-houserules-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
+          restore-keys: |
+            gradle-houserules-${{ runner.os }}-
+
+      - name: Hash app source for APK cache
+        id: apphash
+        run: |
+          HASH=$(git ls-files 'app' | xargs sha256sum 2>/dev/null | sha256sum | cut -d ' ' -f1)
+          echo "hash=$HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Restore APK from cache
+        id: apkcache
+        uses: actions/cache@v4
+        with:
+          path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          key: apk-houserules-${{ steps.apphash.outputs.hash }}
+
+      - name: Build debug APK
+        if: steps.apkcache.outputs.cache-hit != 'true'
+        working-directory: app/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # The Gradle build leaves the runner nearly full — reclaim space
+      # BEFORE the emulator/system-image download, not after it fails.
+      - name: Free disk space (post-build)
+        run: |
+          sudo docker image prune --all --force 2>/dev/null || true
+          df -h / | tail -1
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Install emulator system dependencies
+        # qemu links libpulse at load time; emulator>=6.5 needs xcb-cursor0 for its Qt plugin.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libpulse0 libxcb-cursor0
+
+      - name: Enable KVM for emulator hardware acceleration
+        # /dev/kvm exists on the runner but the user lacks permission; without KVM
+        # the emulator falls back to software rendering and never finishes booting
+        # inside the action's timeout. udev rule = immediate.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+
+      - name: Run Maestro smoke test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          QT_QPA_PLATFORM: offscreen
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -partition-size 2048 -no-snapshot -no-audio -no-boot-anim -no-window -gpu swiftshader_indirect -memory 2048 -camera-back none -camera-front none
+          disable-animations: true
+          # NOTE: android-emulator-runner executes each script LINE as a separate
+          # `sh -c`, so `cd` on its own line does NOT persist. Keep this as ONE
+          # line chained with && / ; — a multiline block regresses to "No such
+          # file or directory" on the adb install.
+          script: cd "$GITHUB_WORKSPACE" && mkdir -p screenshots && adb install -r app/android/app/build/outputs/apk/debug/app-debug.apk && maestro test .maestro/smoke.yaml; TEST_EXIT=$?; adb exec-out screencap -p > screenshots/fail-screencap.png 2>/dev/null; adb logcat -d > screenshots/fail-logcat.txt 2>/dev/null; find . "$HOME" /tmp -name "shot-*.png" -newer app/android/app/build/outputs/apk/debug/app-debug.apk -not -path "*/screenshots/*" -exec cp {} screenshots/ \; 2>/dev/null; ls -la screenshots/ >> "${GITHUB_STEP_SUMMARY:-/dev/null}" 2>/dev/null; if [ $TEST_EXIT -ne 0 ]; then { echo "## Diagnosis - on-screen text at failure"; echo '```'; adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml /tmp/uidump.xml >/dev/null 2>&1; grep -o 'text="[^"]*"' /tmp/uidump.xml 2>/dev/null | grep -v 'text=""' | sort -u | head -60; echo '```'; echo "## Diagnosis - foreground activity"; echo '```'; adb shell dumpsys activity activities 2>/dev/null | grep -E "mFocusedApp|mResumedActivity" | head -4; echo '```'; echo "## Diagnosis - HouseRules process log (last 60 lines)"; echo '```'; PID=$(adb shell pidof com.houserules.app 2>/dev/null | tr -d '\r'); if [ -n "$PID" ]; then adb logcat -d --pid="$PID" 2>/dev/null | tail -60; else echo "com.houserules.app process not running"; fi; echo '```'; } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; fi; exit $TEST_EXIT
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-houserules
+          path: screenshots/
+          if-no-files-found: warn
+
+      - name: Commit screenshots to repo
+        # On green runs, commit the Maestro screenshots so they're visible
+        # in the repo without digging through Actions artifacts.
+        # [skip ci] prevents the commit from re-triggering this workflow.
+        if: success()
+        run: |
+          git config user.name "saad"
+          git config user.email "saad@houserules.app"
+          git add screenshots/
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+          else
+            git commit -m "houserules: e2e screenshots [skip ci]"
+            git push origin HEAD:main
+          fi

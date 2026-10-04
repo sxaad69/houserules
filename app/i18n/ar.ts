@@ -1,0 +1,81 @@
+import type { Strings } from './en';
+
+// Arabic strings — same shape as en.ts. RTL is forced via I18nManager
+// when this locale is active (see i18n/index.ts).
+
+export const ar: Strings = {
+  appName: 'هاوس رولز',
+  tagline: 'قوانينك، ورقك، طاولتك.',
+  tabs: {
+    home: 'الرئيسية',
+    decks: 'الأوراق',
+    boards: 'المتصدرون',
+    profile: 'حسابي',
+  },
+  home: {
+    houseTables: 'طاولات الدار',
+    houseTablesSub: 'مفتوحة دائماً. خذ مقعدك.',
+    lobbySub: 'الردهة · طاولات مفتوحة',
+    openTables: 'طاولات مفتوحة',
+    active: 'نشطة',
+    join: 'انضم',
+    full: 'ممتلئة',
+    players: 'لاعبين',
+    shedding: 'تصريف الأوراق',
+    pointsRace: 'سباق النقاط',
+    vipLounge: 'قاعة VIP',
+    vipTeaser: 'بدون إعلانات · طاولات VIP · متصدرو VIP',
+    quickPlay: 'العب الآن',
+    quickPlaySub: 'انضم لأكثر طاولة نشاطاً.',
+    haveCode: 'عندك رمز غرفة؟',
+    joinPrivate: 'انضم لطاولة خاصة',
+    privateTable: 'طاولة خاصة',
+    privateTableSub: 'العب مع أصدقائك برمز الغرفة.',
+    vsBots: 'العب ضد البوتات',
+    vsBotsSub: 'تدرّب ضد الدار.',
+  },
+  table: {
+    title: 'الطاولة',
+    waiting: 'بانتظار اللاعبين…',
+  },
+  privateTable: {
+    title: 'طاولة خاصة',
+    enterCode: 'أدخل رمز الغرفة',
+    join: 'انضم للطاولة',
+    create: 'أنشئ طاولة',
+    codeHint: 'اطلب الرمز المكوّن من ٦ أحرف من المضيف.',
+  },
+  decks: {
+    title: 'الأوراق',
+    classic52: 'الكلاسيكية ٥٢',
+    classic52Sub: 'الورق القياسي. الوجوه لا تتغير.',
+    uno108: '١٠٨ بأسلوب أونو',
+    uno108Sub: 'ألوان وأرقام وتخطي وعكس وجوكر.',
+    baloot32: 'بلوت ٣٢',
+    baloot32Sub: 'من ٧ للآس. اللعبة الأشهر إقليمياً.',
+    animals12: 'الحيوانات ١٢',
+    animals12Sub: 'اكسب الجولة وامتلك الحيوان.',
+  },
+  boards: {
+    title: 'المتصدرون',
+    public: 'الجميع',
+    vip: 'قاعة VIP',
+    vipLocked: 'لأعضاء VIP فقط. مرئية للجميع.',
+  },
+  profile: {
+    title: 'حسابي',
+    coins: 'العملات',
+    buyCoins: 'احصل على عملات',
+    vip: 'عضوية VIP',
+    vipSub: 'بدون إعلانات · طاولات VIP · متصدرو VIP',
+    becomeVip: 'اشترك VIP',
+    settings: 'الإعدادات',
+    language: 'اللغة',
+  },
+  common: {
+    loading: 'جارٍ التحميل…',
+    retry: 'إعادة المحاولة',
+    close: 'إغلاق',
+    comingSoon: 'الطاولات تفتح قريباً.',
+  },
+};

@@ -1,0 +1,56 @@
+appId: com.houserules.app
+---
+# HouseRules smoke E2E: boot → lobby → all 4 tabs → back home.
+# Screenshots after each tab (Saad's screenshot standard: functionality is
+# proven by evaluating screenshots, not by passing assertions alone).
+#
+# Screenshot map (4 total):
+#   shot-01-lobby.png    Home tab: house tables list, Quick Play, VIP teaser
+#   shot-02-decks.png    Decks tab: all 4 v1 decks
+#   shot-03-leaders.png  Leaders tab: public + VIP leaderboards
+#   shot-04-profile.png  Profile tab: coins, VIP membership
+#
+# Gameplay flows (table screen, bots, private rooms, gifts) land in
+# full-coverage.yaml once the table screen is built (Sprint 2).
+# This directory intentionally mirrors apps/<slug>/.maestro across the portfolio.
+
+# Fresh install state on every run
+- launchApp:
+    clearState: true
+
+# Cold boot on software-rendered emulator is slow and variable — allow 3 min.
+# If the app redboxes, "HouseRules" never appears and the run fails here.
+- extendedWaitUntil:
+    visible: "HouseRules"
+    timeout: 180000
+
+# --- Home tab (lobby) ---
+- takeScreenshot: screenshots/shot-01-lobby.png
+- assertVisible: "House Tables"
+- assertVisible: "Open Tables"
+- assertVisible: "Quick Play"
+- assertVisible: "VIP Lounge"
+
+# --- Decks tab ---
+- tapOn: "Decks"
+- assertVisible: "Classic 52"
+- assertVisible: "Uno-style 108"
+- assertVisible: "Baloot 32"
+- assertVisible: "Animals 12"
+- takeScreenshot: screenshots/shot-02-decks.png
+
+# --- Leaders tab ---
+- tapOn: "Leaders"
+- assertVisible: "Leaderboards"
+- assertVisible: "VIP Room"
+- takeScreenshot: screenshots/shot-03-leaders.png
+
+# --- Profile tab ---
+- tapOn: "Profile"
+- assertVisible: "Coins"
+- assertVisible: "VIP Membership"
+- takeScreenshot: screenshots/shot-04-profile.png
+
+# --- Back home: lobby still intact after tab tour ---
+- tapOn: "Home"
+- assertVisible: "Quick Play"

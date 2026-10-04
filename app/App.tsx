@@ -1,0 +1,132 @@
+import React from 'react';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+  type Theme as NavigationTheme,
+} from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from './navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider, useTheme } from './theme/ThemeProvider';
+import { LocaleProvider, useStrings } from './i18n';
+import { SessionProvider } from './store/session';
+import { HomeScreen } from './screens/HomeScreen';
+import { DecksScreen } from './screens/DecksScreen';
+import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
+import { TableScreen } from './screens/TableScreen';
+import { PrivateTableScreen } from './screens/PrivateTableScreen';
+import type { RootTabParamList, RootStackParamList } from './navigation';
+
+// One stack per tab so each tab keeps its own navigation history.
+// Built once at module level — never inside render, or stacks remount.
+function tabStack(screens: { name: string; component: React.ComponentType<any> }[]) {
+  const Stack = createNativeStackNavigator();
+  return function TabStack() {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {screens.map((s) => (
+          <Stack.Screen key={s.name} name={s.name} component={s.component} />
+        ))}
+      </Stack.Navigator>
+    );
+  };
+}
+
+const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const TAB_ICONS: Record<keyof RootTabParamList, React.ComponentProps<typeof Ionicons>['name']> = {
+  Home: 'home-outline',
+  Decks: 'layers-outline',
+  Leaders: 'trophy-outline',
+  Profile: 'person-outline',
+};
+
+function Tabs() {
+  const { t } = useStrings();
+  const { colors } = useTheme();
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+        },
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
+        ),
+      })}
+    >
+      <Tab.Screen
+        name="Home"
+        component={tabStack([{ name: 'HomeHome', component: HomeScreen }])}
+        options={{ title: t.tabs.home }}
+      />
+      <Tab.Screen
+        name="Decks"
+        component={tabStack([{ name: 'DecksHome', component: DecksScreen }])}
+        options={{ title: t.tabs.decks }}
+      />
+      <Tab.Screen
+        name="Leaders"
+        component={tabStack([{ name: 'LeadersHome', component: LeaderboardsScreen }])}
+        options={{ title: t.tabs.boards }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={tabStack([{ name: 'ProfileHome', component: ProfileScreen }])}
+        options={{ title: t.tabs.profile }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Single NavigationContainer for the whole app. Tabs own the bottom nav;
+// Table + PrivateTable push on top as full-screen stacks.
+function RootNavigator() {
+  const { colors, colorScheme } = useTheme();
+  const base: NavigationTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  return (
+    <NavigationContainer
+      theme={{
+        ...base,
+        colors: { ...base.colors, background: colors.background },
+      }}
+    >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen name="Table" component={TableScreen} />
+        <Stack.Screen name="PrivateTable" component={PrivateTableScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function AppShell() {
+  const { colorScheme } = useTheme();
+  return (
+    <SafeAreaProvider>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+    </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <LocaleProvider>
+        <SessionProvider>
+          <AppShell />
+        </SessionProvider>
+      </LocaleProvider>
+    </ThemeProvider>
+  );
+}
