@@ -52,8 +52,18 @@ export interface GameState {
   rounds: number;
   phase: Phase;
   winnerId: string | null;
-  /** Card that won the last round — feeds the animal-title mechanic. */
+  /** Card that won the last round — feeds the animal-title mechanic. Null on stalemate. */
   winningCard: Card | null;
+  /**
+   * Consecutive turns with no net shed (hand didn't shrink over the turn).
+   * Tiny decks can livelock — e.g. the only playable cards cycle through the
+   * draw pile while dead cards sit in hands (caught by bot-vs-bot sims).
+   * At 2 full rounds of stall the table calls it: fewest cards wins the round.
+   * ponytail: the threshold is the ceiling — a turn counter, not a solver.
+   */
+  stall: number;
+  /** Acting player's hand size when their turn started — for stall accounting. */
+  turnStartHand: number;
   /** Transport-agnostic history: replay, sync, debug. */
   log: Action[];
 }
@@ -68,6 +78,9 @@ export interface CreateOpts {
   rounds?: number;
   includeJokers?: boolean; // classic52 only
 }
+
+/** Turns before the table calls a stalemate: two full rounds of no progress. */
+const STALL_ROUNDS = 2;
 
 function advance(state: GameState, steps: number): void {
   const n = state.players.length;
@@ -126,6 +139,8 @@ function dealRound(state: GameState, seed: number): void {
   state.activeColor = matchColor(starter);
   state.direction = 1;
   state.pendingDraw = 0;
+  state.stall = 0;
+  state.turnStartHand = state.players[state.turn].hand.length;
 }
 
 export function createGame(
@@ -151,6 +166,8 @@ export function createGame(
     phase: 'playing',
     winnerId: null,
     winningCard: null,
+    stall: 0,
+    turnStartHand: 0,
     log: [],
   };
   dealRound(state, opts.seed ?? Date.now());
@@ -178,7 +195,18 @@ function scoreRound(state: GameState, winnerIdx: number): void {
   }
 }
 
-function endRound(state: GameState, winnerIdx: number, winningCard: Card, seed: number): void {
+/** Fewest cards wins the dead round; tiebreak: lower banked score, then seat. */
+function fewestCardsIdx(state: GameState): number {
+  let best = 0;
+  for (let i = 1; i < state.players.length; i++) {
+    const a = state.players[i];
+    const b = state.players[best];
+    if (a.hand.length < b.hand.length || (a.hand.length === b.hand.length && a.score < b.score)) best = i;
+  }
+  return best;
+}
+
+function finishRound(state: GameState, winnerIdx: number, winningCard: Card | null, seed: number): void {
   state.winningCard = winningCard;
   if (state.template === 'shedding') {
     state.phase = 'gameOver';
@@ -201,8 +229,8 @@ function endRound(state: GameState, winnerIdx: number, winningCard: Card, seed: 
 }
 
 /**
- * Apply one action, returning the new state. Pure: the input is never mutated
- * (structuredClone), so snapshots stay safe for realtime sync.
+ * Apply one action, returning the new state. Pure: the input is never mutated,
+ * so snapshots stay safe for realtime sync.
  * Throws on illegal actions — validation lives here, at the trust boundary.
  */
 export function applyAction(prev: GameState, action: Action, seed: number = Date.now()): GameState {
@@ -214,19 +242,30 @@ export function applyAction(prev: GameState, action: Action, seed: number = Date
   if (me.id !== action.playerId) throw new Error(`not ${action.playerId}'s turn`);
   const rng = mulberry32(seed);
 
+  // End-of-turn wrapper: stall accounting, advance, stalemate check.
+  const finishTurn = (steps: number): void => {
+    if (me.hand.length < state.turnStartHand) state.stall = 0;
+    else state.stall += 1;
+    advance(state, steps);
+    state.turnStartHand = currentPlayer(state).hand.length;
+    if (state.phase === 'playing' && state.stall >= state.players.length * STALL_ROUNDS) {
+      finishRound(state, fewestCardsIdx(state), null, seed); // stalemate: no winning card
+    }
+  };
+
   if (action.type === 'draw') {
     if (state.pendingDraw > 0) {
       drawCards(state, me, state.pendingDraw, rng);
       state.pendingDraw = 0;
       state.log.push(action);
-      advance(state, 1);
+      finishTurn(1);
       return state;
     }
     if (legalPlays(state, me.id).length > 0) throw new Error('must play, not draw');
     drawCards(state, me, 1, rng);
     state.log.push(action);
     // Drew into a playable card? Turn stays — they may play it. Otherwise pass.
-    if (legalPlays(state, me.id).length === 0) advance(state, 1);
+    if (legalPlays(state, me.id).length === 0) finishTurn(1);
     return state;
   }
 
@@ -246,33 +285,33 @@ export function applyAction(prev: GameState, action: Action, seed: number = Date
 
   // Win check before effects — empty hand ends the round immediately.
   if (me.hand.length === 0) {
-    endRound(state, state.turn, card, seed);
+    finishRound(state, state.turn, card, seed);
     return state;
   }
 
   switch (card.action) {
     case 'skip':
-      advance(state, 2);
+      finishTurn(2);
       break;
     case 'reverse':
       // ponytail: with 2 players reverse == skip (official Uno behavior).
-      if (state.players.length === 2) advance(state, 2);
+      if (state.players.length === 2) finishTurn(2);
       else {
         state.direction = state.direction === 1 ? -1 : 1;
-        advance(state, 1);
+        finishTurn(1);
       }
       break;
     case 'draw2':
       state.pendingDraw += 2;
-      advance(state, 1);
+      finishTurn(1);
       break;
     case 'wild4':
       state.pendingDraw += 4;
-      advance(state, 1);
+      finishTurn(1);
       break;
     case 'wild':
     default:
-      advance(state, 1);
+      finishTurn(1);
       break;
   }
   return state;

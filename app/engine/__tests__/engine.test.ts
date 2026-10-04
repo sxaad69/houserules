@@ -143,8 +143,8 @@ test('isLegalPlay: color, rank, animal, wild', () => {
   const ad = buildDeck('animals12', ALL_ON, {}, 7);
   const atop = one(ad, (c) => c.animal === 'falcon');
   assert(isLegalPlay(atop, 'red', one(ad, (c) => c.animal === 'falcon')), 'animal self-match');
-  assert(isLegalPlay(atop, 'red', one(ad, (c) => c.animal === 'camel' && c.color === 'red')), 'animal color match');
-  assert(!isLegalPlay(atop, 'red', one(ad, (c) => c.animal === 'camel' && c.color !== 'red')), 'animal non-match allowed');
+  assert(isLegalPlay(atop, 'red', one(ad, (c) => c.animal === 'fox')), 'animal color match (fox is red)');
+  assert(!isLegalPlay(atop, 'red', one(ad, (c) => c.animal === 'camel')), 'animal non-match allowed (camel is yellow)');
 });
 
 // --- game setup -------------------------------------------------------------
@@ -302,9 +302,47 @@ test('sim: classic52 shedding 3P terminates', () => {
 test('sim: baloot32 shedding 2P terminates', () => {
   simGame('baloot32', 'shedding', 2, 33);
 });
-test('sim: animals12 shedding 4P terminates, winner claims animal', () => {
+test('sim: animals12 shedding 4P terminates (stalemate-safe)', () => {
   const s = simGame('animals12', 'shedding', 4, 44);
-  assert(!!s.winningCard?.animal, 'no winning animal for title mechanic');
+  assert(s.log.length < 500, `stalemate took too long: ${s.log.length} actions`);
+});
+test('animals12: winner claims the animal on the winning card', () => {
+  const ad = buildDeck('animals12', ALL_ON, {}, 7);
+  const falcon = one(ad, (c) => c.animal === 'falcon'); // red
+  const top = one(ad, (c) => c.color === 'red' && c.animal !== 'falcon');
+  const other = one(ad, (c) => c.color === 'blue');
+  const s = rigged('animals12', [[falcon], [other]], top);
+  const n = applyAction(s, { type: 'play', playerId: 'p0', cardId: falcon.id });
+  assert(n.phase === 'gameOver' && n.winnerId === 'p0', 'win not detected');
+  assert(n.winningCard?.animal === 'falcon', 'winning animal not recorded for title mechanic');
+});
+test('stalemate: dead round goes to fewest cards', () => {
+  // The exact livelock the sims caught, rigged deterministically: only green
+  // cards can ever be played, so they cycle through the draw pile forever
+  // while dead cards sit in hands. The table must call it.
+  const ad = buildDeck('animals12', ALL_ON, {}, 7);
+  const by = (animal: string) => one(ad, (c) => c.animal === animal);
+  const s = rigged(
+    'animals12',
+    [
+      [by('camel'), by('owl')], // p0: 2 dead yellows
+      [by('oryx'), by('lion')], // p1: 2 dead blues
+      [by('falcon')], // p2: 1 dead red — fewest cards
+      [by('scorpion'), by('cobra')], // p3: 2 dead cards
+    ],
+    by('horse'), // green top; active color green
+  );
+  s.drawPile = [by('gazelle'), by('wolf'), by('fox'), by('hawk')];
+  let g = s;
+  let guard = 0;
+  while (g.phase !== 'gameOver' && guard++ < 200) {
+    const me = currentPlayer(g).id;
+    g = playBotTurn(g, me, 'medium', 1000 + guard);
+  }
+  assert(g.phase === 'gameOver', 'stalemate did not resolve');
+  assert(g.winnerId === 'p2', `fewest-cards player should win stalemate, got ${g.winnerId}`);
+  assert(g.winningCard === null, 'stalemate should record no winning card');
+  assert(g.log.length < 100, `stalemate took too long: ${g.log.length} actions`);
 });
 test('sim: uno108 points race 3P terminates, lowest score wins', () => {
   const s = simGame('uno108', 'pointsRace', 3, 55, 2);
