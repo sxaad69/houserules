@@ -57,26 +57,116 @@ interface PlayingCardProps {
   accessibilityLabel?: string;
 }
 
-function FaceContent({ card, font }: { card: Card; font: number }) {
+function FaceContent({ card, d }: { card: Card; d: { w: number; h: number; font: number; radius: number } }) {
   const { colors } = useTheme();
+  const font = d.font;
 
   if (card.deck === 'uno108') {
     const isWild = card.action === 'wild' || card.action === 'wild4';
     const bg = isWild ? '#2E2E3E' : UNO_BG[card.color ?? 'red'];
     const label = card.action ? ACTION_LABEL[card.action] : card.rank;
+    // Center medallion: white oval, tilted; glyph counter-rotated upright.
+    // Wilds show the 4-color quadrant grid instead of a glyph.
+    const medallionW = d.w * 0.66;
+    const medallionH = d.h * 0.44;
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: bg,
-          borderRadius: 8,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Text variant="h2" style={{ color: '#FFFFFF', fontSize: font, fontWeight: '700' }}>
+      <View style={{ flex: 1, backgroundColor: bg, borderRadius: 8 }}>
+        {/* crisp inner keyline */}
+        <View
+          style={{
+            position: 'absolute',
+            left: 3,
+            right: 3,
+            top: 3,
+            bottom: 3,
+            borderRadius: 6,
+            borderWidth: 1.5,
+            borderColor: 'rgba(255,255,255,0.4)',
+          }}
+        />
+        {/* corner indices */}
+        <Text
+          variant="bodySmall"
+          style={{
+            position: 'absolute',
+            top: 5,
+            left: 7,
+            color: '#FFFFFF',
+            fontSize: font * 0.48,
+            fontWeight: '800',
+            textShadowColor: 'rgba(0,0,0,0.3)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 1,
+          }}
+        >
           {label}
         </Text>
+        <Text
+          variant="bodySmall"
+          style={{
+            position: 'absolute',
+            bottom: 5,
+            right: 7,
+            color: '#FFFFFF',
+            fontSize: font * 0.48,
+            fontWeight: '800',
+            transform: [{ rotate: '180deg' }],
+            textShadowColor: 'rgba(0,0,0,0.3)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 1,
+          }}
+        >
+          {label}
+        </Text>
+        {/* center medallion */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <View
+            style={{
+              width: medallionW,
+              height: medallionH,
+              borderRadius: medallionH / 2,
+              backgroundColor: '#FFFFFF',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: [{ rotate: '-16deg' }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 2,
+              elevation: 2,
+            }}
+          >
+            {isWild ? (
+              <View
+                style={{
+                  width: medallionW * 0.52,
+                  height: medallionH * 0.52,
+                  transform: [{ rotate: '16deg' }],
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  overflow: 'hidden',
+                  borderRadius: 3,
+                }}
+              >
+                {['#D64545', '#D9A62E', '#3FA34D', '#3D7BE8'].map((c) => (
+                  <View key={c} style={{ width: '50%', height: '50%', backgroundColor: c }} />
+                ))}
+              </View>
+            ) : (
+              <Text
+                variant="h2"
+                style={{
+                  color: bg,
+                  fontSize: font * 0.95,
+                  fontWeight: '800',
+                  transform: [{ rotate: '16deg' }],
+                }}
+              >
+                {label}
+              </Text>
+            )}
+          </View>
+        </View>
       </View>
     );
   }
@@ -161,7 +251,7 @@ export function PlayingCard({
   const inner = faceDown ? (
     <Image source={CARD_BACK} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode="cover" />
   ) : (
-    <FaceContent card={card} font={d.font} />
+    <FaceContent card={card} d={d} />
   );
 
   if (!onPress) return <View style={[frame, style]}>{inner}</View>;
