@@ -27,6 +27,7 @@ import {
   type SeatInput,
 } from '../engine';
 import { botForSeat, playBotTurn, type BotDifficulty } from '../bots';
+import { avatarForName } from '../bots/personas';
 import type { Rulebook } from '../engine/types';
 import type { RootStackParamList } from '../navigation';
 
@@ -288,6 +289,7 @@ export function TableScreen({ route, navigation }: Props) {
               <SeatView
                 key={p.id}
                 name={displayName(p.id, p.name)}
+                avatar={avatarForName(p.name)}
                 handCount={p.hand.length}
                 active={!isOver && cur.id === p.id}
                 style={{ position: 'absolute', top: spacing.sm, alignSelf: 'center' }}
@@ -297,6 +299,7 @@ export function TableScreen({ route, navigation }: Props) {
               <SeatView
                 key={p.id}
                 name={displayName(p.id, p.name)}
+                avatar={avatarForName(p.name)}
                 handCount={p.hand.length}
                 active={!isOver && cur.id === p.id}
                 style={{ position: 'absolute', left: spacing.sm, top: '34%' }}
@@ -306,6 +309,7 @@ export function TableScreen({ route, navigation }: Props) {
               <SeatView
                 key={p.id}
                 name={displayName(p.id, p.name)}
+                avatar={avatarForName(p.name)}
                 handCount={p.hand.length}
                 active={!isOver && cur.id === p.id}
                 style={{ position: 'absolute', right: spacing.sm, top: '34%' }}
@@ -315,6 +319,7 @@ export function TableScreen({ route, navigation }: Props) {
               <SeatView
                 key={p.id}
                 name={displayName(p.id, p.name)}
+                avatar={avatarForName(p.name)}
                 handCount={p.hand.length}
                 active={!isOver && cur.id === p.id}
                 style={{ position: 'absolute', top: spacing.sm, alignSelf: 'center', marginTop: 120 }}

@@ -7,6 +7,8 @@ import type { Card } from '../engine/cards';
 
 interface SeatViewProps {
   name: string;
+  /** Emoji avatar shown on the seat instead of an initial. */
+  avatar?: string;
   /** Cards in hand — rendered as a mini face-down fan. */
   handCount: number;
   /** It's this seat's turn: amber ring + pulse. Never gold (VIP-only). */
@@ -21,7 +23,7 @@ const MINI_VISIBLE = 4;
  * One opponent seat: avatar, name, face-down fan, live count.
  * Spatial (top/left/right) — no RTL flipping needed for seat positions.
  */
-export function SeatView({ name, handCount, active, style }: SeatViewProps) {
+export function SeatView({ name, avatar, handCount, active, style }: SeatViewProps) {
   const { colors, spacing, radii } = useTheme();
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -70,8 +72,8 @@ export function SeatView({ name, handCount, active, style }: SeatViewProps) {
             justifyContent: 'center',
           }}
         >
-          <Text variant="h3" color={colors.textPrimary}>
-            {name.charAt(0).toUpperCase()}
+          <Text style={{ fontSize: 26 }} accessibilityLabel={`${name} avatar`}>
+            {avatar ?? name.charAt(0).toUpperCase()}
           </Text>
         </View>
         {handCount > 0 && (

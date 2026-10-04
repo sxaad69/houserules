@@ -16,6 +16,7 @@ import { LocaleProvider, useStrings } from './i18n';
 import { SessionProvider } from './store/session';
 import { HomeScreen } from './screens/HomeScreen';
 import { DecksScreen } from './screens/DecksScreen';
+import { ThemesScreen } from './screens/ThemesScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { TableScreen } from './screens/TableScreen';
@@ -72,7 +73,10 @@ function Tabs() {
       />
       <Tab.Screen
         name="Decks"
-        component={tabStack([{ name: 'DecksHome', component: DecksScreen }])}
+        component={tabStack([
+          { name: 'DecksHome', component: DecksScreen },
+          { name: 'Themes', component: ThemesScreen },
+        ])}
         options={{ title: t.tabs.decks }}
       />
       <Tab.Screen

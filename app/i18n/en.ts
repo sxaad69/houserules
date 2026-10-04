@@ -67,6 +67,14 @@ export const en = {
     animals12: 'Animals 12',
     animals12Sub: 'Win the round, claim the animal.',
   },
+  themes: {
+    title: 'Themes',
+    subtitle: 'Every table, every card, every face — the whole HouseRules look in one place.',
+    gallery: 'Theme gallery',
+    back: 'Card back',
+    avatars: 'Table avatars',
+    yourAvatar: 'Your avatar at the table',
+  },
   boards: {
     title: 'Leaderboards',
     public: 'Everyone',

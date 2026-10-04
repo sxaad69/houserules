@@ -1,5 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
 import { TableCard } from '../components/TableCard';
@@ -17,11 +18,35 @@ const DECKS: { kind: DeckKind; nameKey: 'classic52' | 'uno108' | 'baloot32' | 'a
 
 export function DecksScreen() {
   const { t } = useStrings();
-  const { spacing } = useTheme();
+  const { colors, spacing } = useTheme();
+  const navigation = useNavigation<any>();
 
   return (
     <Screen>
       <Text variant="h1">{t.decks.title}</Text>
+      <Pressable
+        onPress={() => navigation.navigate('Themes')}
+        accessibilityRole="button"
+        accessibilityLabel={t.themes.gallery}
+        style={{
+          borderRadius: 12,
+          padding: spacing.md,
+          backgroundColor: colors.accentMuted,
+          borderWidth: 1.5,
+          borderColor: colors.accent,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <View>
+          <Text variant="h2" color={colors.accent}>🎨 {t.themes.gallery}</Text>
+          <Text variant="bodySmall" color={colors.textSecondary}>
+            {t.themes.subtitle}
+          </Text>
+        </View>
+        <Text variant="h2" color={colors.accent}>›</Text>
+      </Pressable>
       {DECKS.map((deck) => (
         <TableCard key={deck.kind}>
           <View

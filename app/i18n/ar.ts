@@ -69,6 +69,14 @@ export const ar: Strings = {
     animals12: 'الحيوانات ١٢',
     animals12Sub: 'اكسب الجولة وامتلك الحيوان.',
   },
+  themes: {
+    title: 'السمات',
+    subtitle: 'كل طاولة وكل ورقة وكل وجه — شكل HouseRules كاملاً في مكان واحد.',
+    gallery: 'معرض السمات',
+    back: 'ظهر الورقة',
+    avatars: 'صور الطاولة',
+    yourAvatar: 'صورتك على الطاولة',
+  },
   boards: {
     title: 'المتصدرون',
     public: 'الجميع',
