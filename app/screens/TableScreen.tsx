@@ -34,6 +34,17 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Table'>;
 
 const HUMAN_ID = 'you';
 const FELT = require('../assets/felt.jpg');
+/**
+ * Per-deck table theming (spec §10: theming system, not one palette).
+ * The felt texture stays; a deck-tinted overlay sets the atmosphere.
+ * Classic 52 keeps the pure emerald casino felt.
+ */
+const TABLE_THEMES: Record<string, { overlay: string; opacity: number }> = {
+  classic52: { overlay: '#000000', opacity: 0 },
+  uno108: { overlay: '#17123E', opacity: 0.62 }, // midnight indigo — bright cards pop
+  baloot32: { overlay: '#3A2413', opacity: 0.55 }, // desert night bronze
+  animals12: { overlay: '#0E3A20', opacity: 0.5 }, // deep jungle green
+};
 /** Bot "thinking" pause — the table should feel alive, not instant. */
 const BOT_MIN_MS = 700;
 const BOT_JITTER_MS = 700;
@@ -81,6 +92,7 @@ export function TableScreen({ route, navigation }: Props) {
 
   const deck = route.params.deck ?? 'uno108';
   const template = route.params.template ?? 'shedding';
+  const tableTheme = TABLE_THEMES[deck] ?? TABLE_THEMES.classic52;
 
   const rulebook: Rulebook = useMemo(
     () => ({
@@ -217,6 +229,19 @@ export function TableScreen({ route, navigation }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.feltDeep }}>
       <ImageBackground source={FELT} style={{ flex: 1 }} resizeMode="cover">
+        {tableTheme.opacity > 0 && (
+          <View
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: tableTheme.overlay,
+              opacity: tableTheme.opacity,
+            }}
+          />
+        )}
         <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
           {/* Top bar */}
           <View
