@@ -19,6 +19,11 @@ interface SessionState {
   spendCoins: (n: number) => boolean;
   animalTitles: string[];
   claimAnimalTitle: (animal: string) => void;
+  /** Stable multiplayer identity — generated once, persisted. */
+  playerId: string;
+  /** Display name shown at online tables. Editable in Profile. */
+  displayName: string;
+  setDisplayName: (name: string) => void;
 }
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -26,21 +31,36 @@ const SessionContext = createContext<SessionState | null>(null);
 const COINS_KEY = '@houserules:coins/v1';
 const VIP_KEY = '@houserules:vip/v1';
 const TITLES_KEY = '@houserules:titles/v1';
+const PLAYER_ID_KEY = '@houserules:playerId/v1';
+const DISPLAY_NAME_KEY = '@houserules:displayName/v1';
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [vip, setVipState] = useState(false);
   const [coins, setCoins] = useState(0);
   const [animalTitles, setAnimalTitles] = useState<string[]>([]);
+  const [playerId, setPlayerId] = useState('');
+  const [displayName, setDisplayNameState] = useState('');
 
   useEffect(() => {
     (async () => {
-      const [c, v, t] = await Promise.all([
+      const [c, v, t, pid, dn] = await Promise.all([
         AsyncStorage.getItem(COINS_KEY),
         AsyncStorage.getItem(VIP_KEY),
         AsyncStorage.getItem(TITLES_KEY),
+        AsyncStorage.getItem(PLAYER_ID_KEY),
+        AsyncStorage.getItem(DISPLAY_NAME_KEY),
       ]);
       if (c !== null) setCoins(Number(c) || 0);
       if (v === '1') setVipState(true);
+      // Player identity: generate once, keep forever.
+      if (pid) {
+        setPlayerId(pid);
+      } else {
+        const fresh = `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        setPlayerId(fresh);
+        AsyncStorage.setItem(PLAYER_ID_KEY, fresh).catch(() => {});
+      }
+      setDisplayNameState(dn || `Guest-${Math.random().toString(36).slice(2, 6).toUpperCase()}`);
       if (t) {
         try {
           setAnimalTitles(JSON.parse(t) as string[]);
@@ -75,6 +95,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     [coins],
   );
 
+  const setDisplayName = useCallback((name: string) => {
+    const clean = name.trim().slice(0, 16) || 'Guest';
+    setDisplayNameState(clean);
+    AsyncStorage.setItem(DISPLAY_NAME_KEY, clean).catch(() => {});
+  }, []);
+
   const claimAnimalTitle = useCallback((animal: string) => {
     setAnimalTitles((prev) => {
       if (prev.includes(animal)) return prev;
@@ -85,8 +111,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<SessionState>(
-    () => ({ vip, setVip, coins, addCoins, spendCoins, animalTitles, claimAnimalTitle }),
-    [vip, setVip, coins, addCoins, spendCoins, animalTitles, claimAnimalTitle],
+    () => ({ vip, setVip, coins, addCoins, spendCoins, animalTitles, claimAnimalTitle, playerId, displayName, setDisplayName }),
+    [vip, setVip, coins, addCoins, spendCoins, animalTitles, claimAnimalTitle, playerId, displayName, setDisplayName],
   );
 
   return (

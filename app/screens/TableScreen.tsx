@@ -13,6 +13,7 @@ import { Text } from '../components/Text';
 import { Button } from '../components/Button';
 import { PlayingCard } from '../components/PlayingCard';
 import { SeatView } from '../components/SeatView';
+import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
 import {
@@ -40,12 +41,7 @@ const FELT = require('../assets/felt.jpg');
  * The felt texture stays; a deck-tinted overlay sets the atmosphere.
  * Classic 52 keeps the pure emerald casino felt.
  */
-const TABLE_THEMES: Record<string, { overlay: string; opacity: number }> = {
-  classic52: { overlay: '#000000', opacity: 0 },
-  uno108: { overlay: '#17123E', opacity: 0.62 }, // midnight indigo — bright cards pop
-  baloot32: { overlay: '#3A2413', opacity: 0.55 }, // desert night bronze
-  animals12: { overlay: '#0E3A20', opacity: 0.5 }, // deep jungle green
-};
+/* TABLE_THEMES moved to theme/tableThemes.ts — single source of truth. */
 /** Bot "thinking" pause — the table should feel alive, not instant. */
 const BOT_MIN_MS = 700;
 const BOT_JITTER_MS = 700;

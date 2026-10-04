@@ -55,6 +55,7 @@ interface PlayingCardProps {
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 function FaceContent({ card, d }: { card: Card; d: { w: number; h: number; font: number; radius: number } }) {
@@ -235,6 +236,7 @@ export function PlayingCard({
   onPress,
   style,
   accessibilityLabel,
+  testID,
 }: PlayingCardProps) {
   const { colors, spacing } = useTheme();
   const d = DIMS[size];
@@ -257,11 +259,12 @@ export function PlayingCard({
     <FaceContent card={card} d={d} />
   );
 
-  if (!onPress) return <View style={[frame, style]}>{inner}</View>;
+  if (!onPress) return <View style={[frame, style]} testID={testID}>{inner}</View>;
 
   return (
     <Pressable
       onPress={onPress}
+      testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       hitSlop={spacing.sm}

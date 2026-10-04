@@ -9,14 +9,14 @@ import { useStrings } from '../i18n';
 import { BOT_PERSONAS } from '../bots/personas';
 import type { Card } from '../engine/cards';
 import type { DeckKind } from '../engine/types';
+import { TABLE_THEMES } from '../theme/tableThemes';
 
-// Mirrors TableScreen.TABLE_THEMES — the felt each deck plays on.
-// Kept local: this screen is the visual reference, the table is the player.
+// Felt each deck plays on — from the shared table themes.
 const THEMES: { deck: DeckKind; overlay: string; opacity: number; mood: string }[] = [
-  { deck: 'classic52', overlay: '#000000', opacity: 0, mood: 'Emerald Classic' },
-  { deck: 'uno108', overlay: '#17123E', opacity: 0.62, mood: 'Midnight Indigo' },
-  { deck: 'baloot32', overlay: '#3A2413', opacity: 0.55, mood: 'Desert Night Bronze' },
-  { deck: 'animals12', overlay: '#0E3A20', opacity: 0.5, mood: 'Deep Jungle Green' },
+  { deck: 'classic52', ...TABLE_THEMES.classic52, mood: 'Emerald Classic' },
+  { deck: 'uno108', ...TABLE_THEMES.uno108, mood: 'Midnight Indigo' },
+  { deck: 'baloot32', ...TABLE_THEMES.baloot32, mood: 'Desert Night Bronze' },
+  { deck: 'animals12', ...TABLE_THEMES.animals12, mood: 'Deep Jungle Green' },
 ];
 
 const deckNameKey = { classic52: 'classic52', uno108: 'uno108', baloot32: 'baloot32', animals12: 'animals12' } as const;
