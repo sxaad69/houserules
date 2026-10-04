@@ -21,7 +21,12 @@ appId: com.houserules.app
     visible: "HouseRules"
     timeout: 180000
 
-# Quick Play → default house table (Uno-108 Shedding vs 3 bot personas)
+# Quick Play → default house table (Uno-108 Shedding vs 3 bot personas).
+# The hero button sits below the fold — scroll the lobby to it first.
+- scrollUntilVisible:
+    element:
+      text: "Quick Play"
+    direction: DOWN
 - tapOn: "Quick Play"
 
 # Table header shows "Round 1 · SHEDDING" once the game is dealt

@@ -27,10 +27,14 @@ appId: com.houserules.app
 
 # --- Home tab (lobby) ---
 - takeScreenshot: screenshots/shot-01-lobby.png
-- assertVisible: "House Tables"
 - assertVisible: "Open Tables"
-- assertVisible: "Quick Play"
 - assertVisible: "VIP Lounge"
+# Quick Play hero sits below the fold — scroll the lobby to it.
+- scrollUntilVisible:
+    element:
+      text: "Quick Play"
+    direction: DOWN
+- assertVisible: "Quick Play"
 
 # --- Decks tab ---
 - tapOn: "Decks"
