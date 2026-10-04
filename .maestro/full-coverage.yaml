@@ -1,0 +1,45 @@
+appId: com.houserules.app
+---
+# HouseRules gameplay E2E: lobby → Quick Play → real table vs 3 bots.
+# Proves the table renders AND the game advances live: bots auto-play on a
+# 0.7–1.4s "thinking" delay, so waiting for the human's turn text proves a
+# full round of bot turns completed. If bots stall, the wait times out and
+# the run fails — exactly what E2E is for.
+#
+# Screenshot map (continues smoke.yaml's numbering):
+#   shot-05-table.png          table on entry (seats, piles, hand)
+#   shot-06-table-your-turn.png  after bot turns played out, human to move
+#
+# Each flow launches fresh (clearState) — independent of smoke.yaml.
+# CI runs `maestro test .maestro/` which executes every flow in this dir.
+
+- launchApp:
+    clearState: true
+
+# Cold boot on software-rendered emulator is slow and variable — allow 3 min.
+- extendedWaitUntil:
+    visible: "HouseRules"
+    timeout: 180000
+
+# Quick Play → default house table (Uno-108 Shedding vs 3 bot personas)
+- tapOn: "Quick Play"
+
+# Table header shows "Round 1 · SHEDDING" once the game is dealt
+- extendedWaitUntil:
+    visible: "Round 1"
+    timeout: 30000
+
+- assertVisible: "Draw"
+- takeScreenshot: screenshots/shot-05-table.png
+
+# Liveness proof: bots play their turns, then the human is prompted.
+# Passes immediately if the human moves first; otherwise waits through bot turns.
+- extendedWaitUntil:
+    visible: "Your turn — play a highlighted card"
+    timeout: 30000
+
+- takeScreenshot: screenshots/shot-06-table-your-turn.png
+
+# Leave back to the lobby — navigation intact after gameplay
+- tapOn: "Leave table"
+- assertVisible: "Quick Play"

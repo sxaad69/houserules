@@ -10,8 +10,9 @@ appId: com.houserules.app
 #   shot-03-leaders.png  Leaders tab: public + VIP leaderboards
 #   shot-04-profile.png  Profile tab: coins, VIP membership
 #
-# Gameplay flows (table screen, bots, private rooms, gifts) land in
-# full-coverage.yaml once the table screen is built (Sprint 2).
+# Gameplay flows (table screen, bot turns, leave-table) live in
+# full-coverage.yaml (Sprint 2 table screen is built). CI runs
+# `maestro test .maestro/` which executes every flow in this directory.
 # This directory intentionally mirrors apps/<slug>/.maestro across the portfolio.
 
 # Fresh install state on every run
