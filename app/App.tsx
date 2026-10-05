@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
 import {
   NavigationContainer,
@@ -22,6 +22,8 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { TableScreen } from './screens/TableScreen';
 import { PrivateTableScreen } from './screens/PrivateTableScreen';
 import { RoomScreen } from './screens/RoomScreen';
+import { WalletScreen } from './screens/WalletScreen';
+import { VipScreen } from './screens/VipScreen';
 import type { RootTabParamList, RootStackParamList } from './navigation';
 
 // One stack per tab so each tab keeps its own navigation history.
@@ -119,6 +121,8 @@ function RootNavigator() {
         <Stack.Screen name="Table" component={TableScreen} />
         <Stack.Screen name="PrivateTable" component={PrivateTableScreen} />
         <Stack.Screen name="Room" component={RoomScreen} />
+        <Stack.Screen name="Wallet" component={WalletScreen} />
+        <Stack.Screen name="Vip" component={VipScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -126,6 +130,10 @@ function RootNavigator() {
 
 function AppShell() {
   const { colorScheme } = useTheme();
+  // CrazyGames SDK v3: init once on web boot; no-op everywhere else.
+  useEffect(() => {
+    import('./integrations/crazygames').then(({ crazyGames }) => crazyGames.init());
+  }, []);
   return (
     <SafeAreaProvider>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />

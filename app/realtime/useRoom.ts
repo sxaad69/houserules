@@ -24,9 +24,12 @@ import { botForSeat } from '../bots';
 import { chooseAction } from '../bots/strategy';
 import { useSession } from '../store/session';
 import {
+  EMOTES,
+  PHRASE_KEYS,
   generateRoomCode,
   roomChannelName,
   toPublicState,
+  type EmotePayload,
   type LobbyInfo,
   type LobbyPlayer,
   type NetEvent,
@@ -46,6 +49,28 @@ interface UseRoomOpts {
 }
 
 const BOT_THINK_MS = 900;
+
+/** How long a reaction bubble stays on screen. */
+const EMOTE_TTL_MS = 2500;
+/** Min gap between sends per client — spam guard. */
+const EMOTE_THROTTLE_MS = 1500;
+/** Max concurrent bubbles — drops oldest. */
+const MAX_LIVE_EMOTES = 6;
+
+/** An emote/phrase currently rendered as a floating bubble. */
+export interface LiveEmote extends EmotePayload {}
+
+function isValidEmotePayload(p: unknown): p is EmotePayload {
+  if (!p || typeof p !== 'object') return false;
+  const q = p as Record<string, unknown>;
+  if (typeof q.id !== 'string' || !q.id) return false;
+  if (typeof q.from !== 'string' || !q.from) return false;
+  if (typeof q.fromName !== 'string') return false;
+  if (typeof q.value !== 'string' || !q.value) return false;
+  if (q.kind === 'emote') return (EMOTES as readonly string[]).includes(q.value);
+  if (q.kind === 'phrase') return (PHRASE_KEYS as readonly string[]).includes(q.value);
+  return false;
+}
 
 function defaultRulebook(deck: DeckKind, template: RuleTemplate): Rulebook {
   return {
@@ -83,6 +108,43 @@ export function useRoom({ code, role, deck, template, maxPlayers = 4, onHostLeft
   const send = useCallback((event: NetEvent['event'], payload: unknown) => {
     channelRef.current?.send({ type: 'broadcast', event, payload });
   }, []);
+
+  // ---- social: emotes + quick phrases ----
+
+  const [emotes, setEmotes] = useState<LiveEmote[]>([]);
+  const emoteIdsRef = useRef<Set<string>>(new Set());
+  const lastEmoteAtRef = useRef(0);
+
+  const pushEmote = useCallback((payload: EmotePayload) => {
+    if (!isValidEmotePayload(payload)) return; // ignore malformed/junk
+    if (emoteIdsRef.current.has(payload.id)) return; // echo dedupe
+    emoteIdsRef.current.add(payload.id);
+    setEmotes((prev) => [...prev.slice(-(MAX_LIVE_EMOTES - 1)), payload]);
+    setTimeout(() => {
+      emoteIdsRef.current.delete(payload.id);
+      setEmotes((prev) => prev.filter((e) => e.id !== payload.id));
+    }, EMOTE_TTL_MS);
+  }, []);
+
+  const sendEmote = useCallback(
+    (kind: 'emote' | 'phrase', value: string, targetSeat?: string) => {
+      const now = Date.now();
+      if (now - lastEmoteAtRef.current < EMOTE_THROTTLE_MS) return;
+      lastEmoteAtRef.current = now;
+      const payload: EmotePayload = {
+        id: `${playerId}:${now}:${Math.floor(Math.random() * 1e6)}`,
+        from: playerId,
+        fromName: displayName,
+        ...(targetSeat ? { targetSeat } : {}),
+        kind,
+        value,
+        at: now,
+      };
+      pushEmote(payload); // immediate local feedback
+      send('emote', payload);
+    },
+    [playerId, displayName, pushEmote, send],
+  );
 
   // ---- host: broadcast helpers ----
 
@@ -228,6 +290,11 @@ export function useRoom({ code, role, deck, template, maxPlayers = 4, onHostLeft
       const list: PresenceInfo[] = [];
       for (const arr of Object.values(state)) list.push(...arr);
       setPeers(list);
+    });
+
+    // Social reactions: everyone (host + guests) renders everyone else's.
+    ch.on('broadcast', { event: 'emote' }, ({ payload }) => {
+      pushEmote(payload as EmotePayload);
     });
 
     // Guest handlers
@@ -379,6 +446,8 @@ export function useRoom({ code, role, deck, template, maxPlayers = 4, onHostLeft
     isMyTurn,
     peers,
     sendAction,
+    sendEmote,
+    emotes,
     startGame,
     addBot,
     generateRoomCode,

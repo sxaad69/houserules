@@ -100,6 +100,37 @@ export interface Targeted<T> {
   data: T;
 }
 
+// --- Social (emotes + quick phrases, v1) ---
+// Spec §7: emotes + quick phrases only. No free-text chat with strangers.
+// Broadcast peer-to-peer (no host relay needed — cosmetic only).
+
+export const EMOTES = ['👏', '😂', '😮', '🎉', '😅', '🔥', '💯', '🤝'] as const;
+export type EmoteId = (typeof EMOTES)[number];
+
+export const PHRASE_KEYS = [
+  'niceMove',
+  'oops',
+  'goodLuck',
+  'wellPlayed',
+  'yourTurn',
+  'haha',
+] as const;
+export type PhraseKey = (typeof PHRASE_KEYS)[number];
+
+/** One social reaction. `value` is an EmoteId when kind='emote',
+ *  a PhraseKey when kind='phrase'. `targetSeat` is reserved for directed
+ *  reactions (unused by v1 UI — bubbles render over the sender). */
+export interface EmotePayload {
+  /** Client-generated unique id — receivers dedupe on this (echo guard). */
+  id: string;
+  from: string;
+  fromName: string;
+  targetSeat?: string;
+  kind: 'emote' | 'phrase';
+  value: string;
+  at: number;
+}
+
 export type NetEvent =
   | { event: 'lobby'; payload: LobbyInfo }
   | { event: 'start'; payload: { deck: DeckKind; template: RuleTemplate } }
@@ -107,6 +138,7 @@ export type NetEvent =
   | { event: 'state'; payload: PublicState }
   | { event: 'hand'; payload: Targeted<{ hand: Card[] }> }
   | { event: 'action'; payload: { playerId: string; action: Action } }
+  | { event: 'emote'; payload: EmotePayload }
   | { event: 'hostLeft'; payload: Record<string, never> }
   | { event: 'kicked'; payload: Targeted<Record<string, never>> };
 

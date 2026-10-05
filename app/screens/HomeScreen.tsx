@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ImageBackground,
   Pressable,
@@ -13,9 +13,11 @@ import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
 import { Button } from '../components/Button';
 import { TableCard } from '../components/TableCard';
+import { AdBanner } from '../components/AdBanner';
 import { HouseTableRow, type MockTable } from '../components/HouseTableRow';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
+import { useSession } from '../store/session';
 import type { RootStackParamList } from '../navigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tabs'>;
@@ -52,6 +54,44 @@ const MOCK_TABLES: MockTable[] = [
   },
 ];
 
+// ponytail: VIP tables are a separate, gold-accented section (spec §8).
+// Same MockTable shape — VIP is a property of the listing, not the engine.
+const VIP_TABLES: MockTable[] = [
+  {
+    id: 'vip-uno',
+    name: 'Midnight Uno Lounge',
+    deck: 'uno108',
+    template: 'shedding',
+    seated: 4,
+    capacity: 6,
+    players: [{ initials: 'L' }, { initials: 'F' }, { initials: 'S' }, { initials: 'A' }],
+  },
+  {
+    id: 'vip-baloot',
+    name: 'Golden Baloot Majlis',
+    deck: 'baloot32',
+    template: 'pointsRace',
+    seated: 2,
+    capacity: 4,
+    players: [{ initials: 'K' }, { initials: 'T' }],
+  },
+  {
+    id: 'vip-classic',
+    name: 'Emerald Elite',
+    deck: 'classic52',
+    template: 'shedding',
+    seated: 5,
+    capacity: 6,
+    players: [
+      { initials: 'N' },
+      { initials: 'O' },
+      { initials: 'M' },
+      { initials: 'R' },
+      { initials: 'H' },
+    ],
+  },
+];
+
 /**
  * Home: the lobby. Felt-texture room in dark mode (the felt IS the room),
  * cream lobby in light mode. Structure follows the approved mockup:
@@ -68,6 +108,9 @@ const MOCK_TABLES: MockTable[] = [
 export function HomeScreen({ navigation }: Props) {
   const { t } = useStrings();
   const { colors, spacing, radii, colorScheme } = useTheme();
+  const { vip } = useSession();
+  // Which VIP table the non-VIP user just tapped — shows the upsell card.
+  const [upsellFor, setUpsellFor] = useState<string | null>(null);
 
   const joinTable = (table: MockTable) =>
     navigation.navigate('Table', {
@@ -75,6 +118,20 @@ export function HomeScreen({ navigation }: Props) {
       deck: table.deck,
       template: table.template,
     });
+
+  const joinVipTable = (table: MockTable) => {
+    if (vip) {
+      navigation.navigate('Table', {
+        tableId: table.id,
+        deck: table.deck,
+        template: table.template,
+        isVip: true,
+      });
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      setUpsellFor(table.id);
+    }
+  };
 
   const quickPlay = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -190,6 +247,94 @@ export function HomeScreen({ navigation }: Props) {
         />
       ))}
 
+      {/* VIP Tables — gold-accented, members only (spec §8) */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.sm,
+        }}
+      >
+        <MaterialCommunityIcons name="crown" size={22} color={colors.gold} />
+        <View style={{ flex: 1 }}>
+          <Text variant="h1" color={colors.gold}>
+            {t.vip.tables}
+          </Text>
+          <Text variant="bodySmall" color={colors.textSecondary}>
+            {t.vip.tablesSub}
+          </Text>
+        </View>
+      </View>
+
+      {VIP_TABLES.map((table) => {
+        const deckLabel = t.decks[table.deck];
+        const templateLabel =
+          table.template === 'shedding' ? t.home.shedding : t.home.pointsRace;
+        return (
+          <TableCard key={table.id} vip>
+            <Pressable
+              onPress={() => joinVipTable(table)}
+              accessibilityRole="button"
+              accessibilityLabel={table.name}
+              android_ripple={{ color: 'rgba(201,162,39,0.2)' }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.md,
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="crown"
+                  size={28}
+                  color={colors.gold}
+                />
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <Text variant="bodyBold" color={colors.vipText}>
+                    {table.name}
+                  </Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {deckLabel} • {templateLabel} • {table.seated}/
+                    {table.capacity} {t.home.players}
+                  </Text>
+                </View>
+                {vip ? (
+                  <Button
+                    size="sm"
+                    variant="gold"
+                    title={t.home.join}
+                    onPress={() => joinVipTable(table)}
+                  />
+                ) : (
+                  <MaterialCommunityIcons
+                    name="lock"
+                    size={22}
+                    color={colors.gold}
+                  />
+                )}
+              </View>
+            </Pressable>
+            {upsellFor === table.id && !vip && (
+              <View style={{ paddingTop: spacing.md, gap: spacing.sm }}>
+                <Text variant="bodyBold" color={colors.gold}>
+                  {t.vip.membersOnly}
+                </Text>
+                <Text variant="bodySmall" color={colors.vipText}>
+                  {t.vip.upsellBody}
+                </Text>
+                <Button
+                  variant="gold"
+                  size="sm"
+                  title={t.vip.viewMembership}
+                  onPress={() => navigation.navigate('Vip')}
+                />
+              </View>
+            )}
+          </TableCard>
+        );
+      })}
+
       {/* Quick Play hero — accent amber, never gold (free-tier CTA) */}
       <Pressable
         onPress={quickPlay}
@@ -227,6 +372,9 @@ export function HomeScreen({ navigation }: Props) {
           {t.home.haveCode} {t.home.joinPrivate}
         </Text>
       </Pressable>
+
+      {/* Free-tier ad slot — hidden for VIPs (spec §8) */}
+      <AdBanner />
     </>
   );
 

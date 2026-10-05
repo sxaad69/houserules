@@ -103,6 +103,17 @@ async function main() {
   assert.ok(seen.hand && seen.hand.hand.length === 1, 'guest hand not updated');
   console.log('✓ action → validate → state + hand (turn advanced to host-1)');
 
+  // Emote broadcast: peer-to-peer, no host relay. Both directions.
+  const seenEmotes = [];
+  hostCh.on('broadcast', { event: 'emote' }, ({ payload }) => { seenEmotes.push(payload); });
+  guestCh.on('broadcast', { event: 'emote' }, ({ payload }) => { seenEmotes.push(payload); });
+  guestCh.send({ type: 'broadcast', event: 'emote', payload: { id: 'e1', from: 'guest-1', fromName: 'Guest', kind: 'emote', value: '👏', at: Date.now() } });
+  hostCh.send({ type: 'broadcast', event: 'emote', payload: { id: 'e2', from: 'host-1', fromName: 'Host', kind: 'phrase', value: 'niceMove', at: Date.now() } });
+  await new Promise((r) => setTimeout(r, 2500));
+  assert.ok(seenEmotes.some((e) => e.id === 'e1' && e.kind === 'emote' && e.value === '👏'), 'guest emote not received');
+  assert.ok(seenEmotes.some((e) => e.id === 'e2' && e.kind === 'phrase' && e.value === 'niceMove'), 'host phrase not received');
+  console.log('✓ emote + phrase broadcast (peer-to-peer, both directions)');
+
   console.log('\nPROTOCOL INTEGRATION: ALL PASS');
   process.exit(0);
 }

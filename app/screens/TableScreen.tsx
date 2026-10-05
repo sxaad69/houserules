@@ -29,7 +29,11 @@ import {
 } from '../engine';
 import { botForSeat, playBotTurn, type BotDifficulty } from '../bots';
 import { avatarForName } from '../bots/personas';
+import { GiftPicker } from '../components/GiftPicker';
+import { GiftCelebration } from '../components/GiftCelebration';
+import { useGiftSending } from '../economy/useGiftSending';
 import type { Rulebook } from '../engine/types';
+import { crazyGames } from '../integrations/crazygames';
 import type { RootStackParamList } from '../navigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Table'>;
@@ -110,6 +114,7 @@ export function TableScreen({ route, navigation }: Props) {
   const [difficulties, setDifficulties] = useState<Record<string, BotDifficulty>>({});
   const [wildCard, setWildCard] = useState<Card | null>(null);
   const [roundKey, setRoundKey] = useState(0);
+  const gift = useGiftSending();
 
   // Modest motion: deal-in on mount/rematch, pop on new discard.
   const dealAnim = useRef(new Animated.Value(0)).current;
@@ -125,6 +130,8 @@ export function TableScreen({ route, navigation }: Props) {
     dealAnim.setValue(0);
     Animated.timing(dealAnim, { toValue: 1, duration: 450, useNativeDriver: true })
       .start();
+    crazyGames.gameplayStart();
+    return () => crazyGames.gameplayStop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rulebook, route.params.tableId, roundKey]);
 
@@ -191,6 +198,13 @@ export function TableScreen({ route, navigation }: Props) {
 
   const displayName = (id: string, name: string) => (id === HUMAN_ID ? t.table.you : name);
 
+  // CrazyGames: stop gameplay telemetry when the game ends.
+  // (Placed before the !game early-return: hooks must run unconditionally.)
+  const isOver = game?.phase === 'gameOver';
+  useEffect(() => {
+    if (isOver) crazyGames.gameplayStop();
+  }, [isOver]);
+
   if (!game) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.feltDeep, alignItems: 'center', justifyContent: 'center' }}>
@@ -207,7 +221,6 @@ export function TableScreen({ route, navigation }: Props) {
   const mustDraw = isHumanTurn && game.pendingDraw === 0 && legal.length === 0;
   const topCard = game.discardPile[game.discardPile.length - 1];
   const opponents = game.players.filter((p) => p.id !== HUMAN_ID);
-  const isOver = game.phase === 'gameOver';
   const winner = isOver ? game.players.find((p) => p.id === game.winnerId) : null;
   const colorsForWild = declarableColors(game.deckKind);
   const useSuits = game.deckKind === 'classic52' || game.deckKind === 'baloot32';
@@ -262,9 +275,20 @@ export function TableScreen({ route, navigation }: Props) {
             <Text variant="bodySmall" style={{ color: '#FFFFFF', fontWeight: '700', letterSpacing: 2 }}>
               {`${t.table.round} ${game.round}${game.template === 'pointsRace' ? `/${game.rounds}` : ''} · ${template === 'shedding' ? 'SHEDDING' : 'POINTS'}`}
             </Text>
-            <Text variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
-              {deck === 'uno108' ? 'UNO 108' : deck === 'classic52' ? '52' : deck === 'baloot32' ? '32' : '12'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Text variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                {deck === 'uno108' ? 'UNO 108' : deck === 'classic52' ? '52' : deck === 'baloot32' ? '32' : '12'}
+              </Text>
+              <Pressable
+                onPress={gift.openPicker}
+                accessibilityLabel={t.economy.sendGift}
+                accessibilityRole="button"
+                hitSlop={spacing.md}
+                style={{ padding: spacing.xs }}
+              >
+                <Text style={{ fontSize: 22 }}>🎁</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Points-race scoreboard */}
@@ -487,6 +511,21 @@ export function TableScreen({ route, navigation }: Props) {
               </View>
             </View>
           </Modal>
+
+          {/* Gift sending (spec §8: coins → gifts only, direct sale, no loot boxes) */}
+          <GiftPicker
+            visible={gift.pickerOpen}
+            coins={gift.coins}
+            vip={gift.vip}
+            error={gift.error}
+            onSelect={gift.send}
+            onClose={gift.closePicker}
+            onGoToWallet={() => {
+              gift.closePicker();
+              navigation.navigate('Wallet');
+            }}
+          />
+          {gift.celebration && <GiftCelebration gift={gift.celebration} />}
         </SafeAreaView>
       </ImageBackground>
     </View>

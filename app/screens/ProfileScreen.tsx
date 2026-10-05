@@ -10,11 +10,11 @@ import { useTheme } from '../theme/ThemeProvider';
 import { useSession } from '../store/session';
 
 /** Profile + wallet: coins, VIP membership, language. Spec §8. */
-export function ProfileScreen() {
+export function ProfileScreen({ navigation }: { navigation: any }) {
   const { t } = useStrings();
   const { locale, setLocale } = useLocale();
   const { colors, spacing } = useTheme();
-  const { vip, coins, animalTitles } = useSession();
+  const { vip, setVip, coins, animalTitles } = useSession();
 
   return (
     <Screen>
@@ -24,24 +24,37 @@ export function ProfileScreen() {
         <Text variant="overline" color={colors.textTertiary}>
           {t.profile.coins}
         </Text>
-        <Text variant="display">{coins}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+          <Text style={{ fontSize: 28 }}>🪙</Text>
+          <Text variant="display">{coins}</Text>
+        </View>
         <View style={{ height: spacing.sm }} />
-        <Button title={t.profile.buyCoins} variant="secondary" onPress={() => {}} />
+        <Button
+          title={t.profile.buyCoins}
+          variant="secondary"
+          onPress={() => navigation.navigate('Wallet')}
+        />
       </TableCard>
 
       <TableCard vip>
         <Text variant="overline" color={colors.gold}>
           {t.profile.vip}
         </Text>
-        <Text variant="bodySmall" color={colors.textSecondary}>
-          {t.profile.vipSub}
+        <Text variant="bodySmall" color={colors.vipText}>
+          {vip ? t.economy.vipActive : t.profile.vipSub}
         </Text>
         <View style={{ height: spacing.sm }} />
         <Button
           title={vip ? t.profile.vip : t.profile.becomeVip}
           variant="gold"
-          disabled={vip}
-          onPress={() => {}}
+          onPress={() => navigation.navigate('Vip')}
+        />
+        <View style={{ height: spacing.sm }} />
+        <Button
+          title={`${t.economy.testToggle}: ${vip ? 'ON' : 'OFF'}`}
+          variant="secondary"
+          size="sm"
+          onPress={() => setVip(!vip)}
         />
       </TableCard>
 

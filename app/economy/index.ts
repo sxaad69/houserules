@@ -24,11 +24,13 @@ export interface Gift {
   costCoins: number;
   /** Lottie animation asset name (added with gift art). */
   animation: string;
+  /** Emoji art for the animated bounce overlay (lottie-react-native is web-unreliable). */
+  emoji: string;
   vipOnly: boolean;
 }
 
 export const GIFTS: Gift[] = [
-  { id: 'flower', nameKey: 'flower', costCoins: 10, animation: 'gift-flower', vipOnly: false },
-  { id: 'juice', nameKey: 'juice', costCoins: 15, animation: 'gift-juice', vipOnly: false },
-  { id: 'falcon', nameKey: 'falcon', costCoins: 100, animation: 'gift-falcon', vipOnly: true },
+  { id: 'flower', nameKey: 'flower', costCoins: 10, animation: 'gift-flower', emoji: '🌹', vipOnly: false },
+  { id: 'juice', nameKey: 'juice', costCoins: 15, animation: 'gift-juice', emoji: '🧃', vipOnly: false },
+  { id: 'falcon', nameKey: 'falcon', costCoins: 100, animation: 'gift-falcon', emoji: '🦅', vipOnly: true },
 ];

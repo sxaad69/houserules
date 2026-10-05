@@ -1,0 +1,2 @@
+# itch.io beta zips are reproducible via `npx expo export --platform web` — don't commit binaries
+itch/*.zip
