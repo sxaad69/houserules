@@ -30,6 +30,8 @@ import {
 import { botForSeat, playBotTurn, type BotDifficulty } from '../bots';
 import { avatarForName } from '../bots/personas';
 import type { Rulebook } from '../engine/types';
+import { customFeltById, isCustomRulebook, type CustomRulebook } from '../builder';
+import { recordPlay } from '../gallery/storage';
 import type { RootStackParamList } from '../navigation';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Table'>;
@@ -67,10 +69,10 @@ const SUIT_GLYPH: Record<string, string> = {
   clubs: '♣',
 };
 
-function buildSeats(tableId: string): { seats: SeatInput[]; difficulties: Record<string, BotDifficulty> } {
+function buildSeats(tableId: string, botCount: number): { seats: SeatInput[]; difficulties: Record<string, BotDifficulty> } {
   const seats: SeatInput[] = [{ id: HUMAN_ID, name: 'you', isBot: false }];
   const difficulties: Record<string, BotDifficulty> = {};
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < botCount; i++) {
     const bot = botForSeat(tableId, i);
     seats.push({ id: bot.id, name: bot.name, isBot: true });
     difficulties[bot.id] = bot.difficulty;
@@ -89,21 +91,30 @@ export function TableScreen({ route, navigation }: Props) {
 
   const deck = route.params.deck ?? 'uno108';
   const template = route.params.template ?? 'shedding';
-  const tableTheme = TABLE_THEMES[deck] ?? TABLE_THEMES.classic52;
+  // Phase 2: a custom rulebook from the Builder overrides the house preset.
+  const custom: CustomRulebook | undefined = isCustomRulebook(route.params.rulebook)
+    ? route.params.rulebook
+    : undefined;
+  const feltOverride = custom ? customFeltById(custom.feltThemeId) : null;
+  const tableTheme = feltOverride
+    ? { overlay: feltOverride.overlay, opacity: feltOverride.opacity }
+    : TABLE_THEMES[deck] ?? TABLE_THEMES.classic52;
+  const botCount = custom ? Math.max(1, custom.maxPlayers - 1) : 3;
 
   const rulebook: Rulebook = useMemo(
-    () => ({
-      id: `house-${deck}`,
-      name: 'House Table',
-      deck,
-      template,
-      specials: { ...DEFAULT_SPECIALS },
-      winCondition: template === 'pointsRace' ? 'lowestScore' : 'emptyHand',
-      minPlayers: 2,
-      maxPlayers: 8,
-      turnSeconds: 0,
-    }),
-    [deck, template],
+    () =>
+      custom ?? {
+        id: `house-${deck}`,
+        name: 'House Table',
+        deck,
+        template,
+        specials: { ...DEFAULT_SPECIALS },
+        winCondition: template === 'pointsRace' ? 'lowestScore' : 'emptyHand',
+        minPlayers: 2,
+        maxPlayers: 8,
+        turnSeconds: 0,
+      },
+    [custom, deck, template],
   );
 
   const [game, setGame] = useState<GameState | null>(null);
@@ -117,9 +128,15 @@ export function TableScreen({ route, navigation }: Props) {
   const lastDiscardLen = useRef(0);
 
   useEffect(() => {
-    const { seats, difficulties: diffs } = buildSeats(route.params.tableId);
+    const { seats, difficulties: diffs } = buildSeats(route.params.tableId, botCount);
     setDifficulties(diffs);
-    setGame(createGame(rulebook, seats, { seed: Date.now() }));
+    setGame(
+      createGame(rulebook, seats, {
+        seed: Date.now(),
+        rounds: custom?.rounds,
+        includeJokers: custom?.includeJokers,
+      }),
+    );
     setWildCard(null);
     lastDiscardLen.current = 0;
     dealAnim.setValue(0);
@@ -136,6 +153,18 @@ export function TableScreen({ route, navigation }: Props) {
       Animated.spring(popAnim, { toValue: 1, friction: 6, useNativeDriver: true }).start();
     }
   }, [game?.discardPile.length, game, popAnim]);
+
+  // Phase 2 gallery: record one finished game per custom rulebook (creator nudge).
+  // Keyed by roundKey so rematches count as separate games; the ref guards
+  // against double-counting the same gameOver across re-renders.
+  const countedGameRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!custom || !game || game.phase !== 'gameOver') return;
+    const key = `${custom.id}:${roundKey}`;
+    if (countedGameRef.current === key) return;
+    countedGameRef.current = key;
+    recordPlay(custom.id).catch(() => {});
+  }, [custom, game, roundKey]);
 
   // Bot driver: when a bot holds the turn, think briefly, then act.
   useEffect(() => {
@@ -338,6 +367,7 @@ export function TableScreen({ route, navigation }: Props) {
                     card={{ id: 'draw-stub', deck, color: null, suit: null, rank: '', action: null, animal: null }}
                     size="md"
                     faceDown
+                    backId={custom?.cardBackId}
                   />
                   <View
                     style={{

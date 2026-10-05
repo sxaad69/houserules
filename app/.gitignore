@@ -2,3 +2,5 @@ node_modules/
 .expo/
 dist/
 dist-web/
+# local dev symlink to main repo node_modules — never commit
+node_modules

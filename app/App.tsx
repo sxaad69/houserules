@@ -22,6 +22,9 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { TableScreen } from './screens/TableScreen';
 import { PrivateTableScreen } from './screens/PrivateTableScreen';
 import { RoomScreen } from './screens/RoomScreen';
+import { BuilderScreen } from './screens/BuilderScreen';
+import { GalleryScreen } from './screens/GalleryScreen';
+import { GalleryDetailScreen } from './screens/GalleryDetailScreen';
 import type { RootTabParamList, RootStackParamList } from './navigation';
 
 // One stack per tab so each tab keeps its own navigation history.
@@ -119,6 +122,9 @@ function RootNavigator() {
         <Stack.Screen name="Table" component={TableScreen} />
         <Stack.Screen name="PrivateTable" component={PrivateTableScreen} />
         <Stack.Screen name="Room" component={RoomScreen} />
+        <Stack.Screen name="Builder" component={BuilderScreen} />
+        <Stack.Screen name="Gallery" component={GalleryScreen} />
+        <Stack.Screen name="GalleryDetail" component={GalleryDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
