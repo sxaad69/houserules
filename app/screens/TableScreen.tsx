@@ -606,6 +606,21 @@ export function TableScreen({ route, navigation }: Props) {
                       {game.drawPile.length}
                     </Text>
                   </View>
+                  {isHumanTurn && (
+                    <View
+                      style={{
+                        marginTop: 4,
+                        backgroundColor: colors.accent,
+                        borderRadius: radii.full,
+                        paddingHorizontal: spacing.md,
+                        paddingVertical: 4,
+                      }}
+                    >
+                      <Text variant="caption" style={{ color: colors.textInverse, fontWeight: '700' }}>
+                        {t.table.draw}
+                      </Text>
+                    </View>
+                  )}
                 </Pressable>
                 {/* Discard pile */}
                 <Animated.View style={{ transform: [{ scale: popAnim }] }}>
