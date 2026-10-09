@@ -76,7 +76,8 @@ function EmoteBubble({ emote, style }: { emote: LiveEmote; style: StyleProp<View
   );
 }
 
-/** Emote + quick-phrase picker panel. Theme tokens only — no gold. */
+/** Emote + quick-phrase picker: a polished bottom sheet with chat-bubble
+ *  phrase pills and a clean emote grid. Theme tokens only — no gold. */
 function SocialPanel({ onPick }: { onPick: (kind: 'emote' | 'phrase', value: string) => void }) {
   const { t } = useStrings();
   const { colors, spacing, radii } = useTheme();
@@ -90,20 +91,38 @@ function SocialPanel({ onPick }: { onPick: (kind: 'emote' | 'phrase', value: str
         left: spacing.md,
         right: spacing.md,
         backgroundColor: colors.surface,
-        borderRadius: radii.lg,
-        padding: spacing.md,
+        borderRadius: radii.xl,
+        paddingTop: spacing.xs,
+        paddingBottom: spacing.md,
+        paddingHorizontal: spacing.md,
         borderWidth: 1,
         borderColor: colors.border,
         shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: -4 },
+        elevation: 10,
       }}
     >
-      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.xs }}>
+      {/* drag handle */}
+      <View style={{ alignItems: 'center', marginBottom: spacing.xs }}>
+        <View
+          style={{
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: colors.borderStrong,
+          }}
+        />
+      </View>
+      <Text
+        variant="overline"
+        color={colors.textTertiary}
+        style={{ marginBottom: spacing.xs, letterSpacing: 1.2 }}
+      >
         {t.social.emotes}
       </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md }}>
         {EMOTES.map((e) => (
           <Pressable
             key={e}
@@ -111,20 +130,27 @@ function SocialPanel({ onPick }: { onPick: (kind: 'emote' | 'phrase', value: str
             accessibilityRole="button"
             accessibilityLabel={e}
             testID={`emote-pick-${e}`}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: colors.surfaceAlt,
+            style={({ pressed }) => ({
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: pressed ? colors.accentMuted : colors.felt,
+              borderWidth: 1,
+              borderColor: colors.border,
               alignItems: 'center',
               justifyContent: 'center',
-            }}
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
             <Text style={{ fontSize: 26 }}>{e}</Text>
           </Pressable>
         ))}
       </View>
-      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.xs }}>
+      <Text
+        variant="overline"
+        color={colors.textTertiary}
+        style={{ marginBottom: spacing.xs, letterSpacing: 1.2 }}
+      >
         {t.social.phrases}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -133,15 +159,24 @@ function SocialPanel({ onPick }: { onPick: (kind: 'emote' | 'phrase', value: str
             key={k}
             onPress={() => onPick('phrase', k)}
             accessibilityRole="button"
+            accessibilityLabel={t.social[k]}
             testID={`phrase-pick-${k}`}
-            style={{
-              backgroundColor: colors.surfaceAlt,
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? colors.accent : colors.surfaceAlt,
               borderRadius: radii.full,
               paddingHorizontal: spacing.md,
-              paddingVertical: spacing.xs,
-            }}
+              paddingVertical: spacing.sm,
+              borderWidth: 1,
+              borderColor: pressed ? colors.accent : colors.borderStrong,
+              // chat-bubble tail hint: slightly squarer on the leading edge
+              borderTopLeftRadius: radii.sm,
+            })}
           >
-            <Text variant="bodySmall" style={{ fontWeight: '600' }}>
+            <Text
+              variant="bodySmall"
+              style={{ fontWeight: '700' }}
+              color={colors.textPrimary}
+            >
               {t.social[k]}
             </Text>
           </Pressable>

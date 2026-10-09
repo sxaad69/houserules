@@ -14,6 +14,7 @@ export interface BotPlayer {
 
 export { BOT_PERSONAS, personaForSeat, type BotPersona } from './personas';
 export { chooseAction, playBotTurn } from './strategy';
+export { botReaction, type BotReaction, type BotReactionEvent } from './reactions';
 
 import { personaForSeat } from './personas';
 

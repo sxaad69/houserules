@@ -62,7 +62,7 @@ const MOCK_TABLES: MockTable[] = [
   },
   {
     id: 'house-baloot',
-    name: 'Baloot Corner',
+    name: '32-Card Corner',
     deck: 'baloot32',
     template: 'pointsRace',
     seated: 4,
@@ -85,7 +85,7 @@ const VIP_TABLES: MockTable[] = [
   },
   {
     id: 'vip-baloot',
-    name: 'Golden Baloot Majlis',
+    name: 'Golden 32-Card Majlis',
     deck: 'baloot32',
     template: 'pointsRace',
     seated: 2,
@@ -119,7 +119,7 @@ const VIP_TABLES: MockTable[] = [
  *   textPrimary. Gold appears only inside the VIP teaser.
  * - no gambling language: no blinds/bets/"high roller" — deck + template
  *   labels instead, per the halal guardrails.
- * - tables are our v1 decks (Uno-108, Classic 52, Baloot 32), not
+ * - tables are our v1 decks (Uno-108, Classic 52, 32-Card), not
  *   Hold'em/Blackjack/Rummy.
  */
 export function HomeScreen({ navigation }: Props) {

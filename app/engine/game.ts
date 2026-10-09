@@ -13,6 +13,7 @@ import {
   type Card,
 } from './cards';
 import type { DeckKind, Rulebook, SpecialCardToggles } from './types';
+import { trackGameEnd, trackGameStart } from '../analytics/events';
 
 export interface SeatInput {
   id: string;
@@ -171,6 +172,12 @@ export function createGame(
     log: [],
   };
   dealRound(state, opts.seed ?? Date.now());
+  trackGameStart(state, {
+    deck: rulebook.deck,
+    template: rulebook.template,
+    playerCount: seats.length,
+    botCount: seats.filter((s) => s.isBot).length,
+  });
   return state;
 }
 
@@ -211,6 +218,13 @@ function finishRound(state: GameState, winnerIdx: number, winningCard: Card | nu
   if (state.template === 'shedding') {
     state.phase = 'gameOver';
     state.winnerId = state.players[winnerIdx].id;
+    trackGameEnd(state, {
+      winnerId: state.winnerId,
+      winnerIsBot: state.players[winnerIdx].isBot,
+      rounds: state.round,
+      deck: state.deckKind,
+      template: state.template,
+    });
     return;
   }
   // Points Race: bank scores, play next round or finish.
@@ -221,6 +235,13 @@ function finishRound(state: GameState, winnerIdx: number, winningCard: Card | nu
     for (let i = 1; i < state.players.length; i++)
       if (state.players[i].score < state.players[best].score) best = i;
     state.winnerId = state.players[best].id;
+    trackGameEnd(state, {
+      winnerId: state.winnerId,
+      winnerIsBot: state.players[best].isBot,
+      rounds: state.round,
+      deck: state.deckKind,
+      template: state.template,
+    });
     return;
   }
   state.round += 1;

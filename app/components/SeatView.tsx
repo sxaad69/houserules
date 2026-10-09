@@ -13,6 +13,8 @@ interface SeatViewProps {
   handCount: number;
   /** It's this seat's turn: amber ring + pulse. Never gold (VIP-only). */
   active: boolean;
+  /** Bot reaction text (emote or phrase) — shown as a speech bubble. */
+  bubble?: string | null;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -23,7 +25,7 @@ const MINI_VISIBLE = 4;
  * One opponent seat: avatar, name, face-down fan, live count.
  * Spatial (top/left/right) — no RTL flipping needed for seat positions.
  */
-export function SeatView({ name, avatar, handCount, active, style }: SeatViewProps) {
+export function SeatView({ name, avatar, handCount, active, bubble, style }: SeatViewProps) {
   const { colors, spacing, radii } = useTheme();
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -44,6 +46,22 @@ export function SeatView({ name, avatar, handCount, active, style }: SeatViewPro
 
   return (
     <View style={[{ alignItems: 'center' }, style]} accessibilityLabel={`${name}, ${handCount} cards`}>
+      {bubble ? (
+        <View
+          style={{
+            marginBottom: spacing.xs,
+            backgroundColor: colors.cardFace,
+            borderRadius: radii.lg,
+            paddingHorizontal: spacing.sm,
+            paddingVertical: 4,
+            maxWidth: 170,
+          }}
+        >
+          <Text variant="caption" color={colors.textPrimary} style={{ textAlign: 'center', fontWeight: '600' }} numberOfLines={2}>
+            {bubble}
+          </Text>
+        </View>
+      ) : null}
       <View>
         {active && (
           <Animated.View

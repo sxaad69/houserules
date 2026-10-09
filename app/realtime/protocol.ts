@@ -114,6 +114,7 @@ export const PHRASE_KEYS = [
   'wellPlayed',
   'yourTurn',
   'haha',
+  'thanks',
 ] as const;
 export type PhraseKey = (typeof PHRASE_KEYS)[number];
 
