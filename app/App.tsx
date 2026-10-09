@@ -28,6 +28,9 @@ import { PrivateTableScreen } from './screens/PrivateTableScreen';
 import { RoomScreen } from './screens/RoomScreen';
 import { WalletScreen } from './screens/WalletScreen';
 import { VipScreen } from './screens/VipScreen';
+import { BuilderScreen } from './screens/BuilderScreen';
+import { GalleryScreen } from './screens/GalleryScreen';
+import { GalleryDetailScreen } from './screens/GalleryDetailScreen';
 import type { RootTabParamList, RootStackParamList } from './navigation';
 
 // One stack per tab so each tab keeps its own navigation history.
@@ -146,6 +149,9 @@ function RootNavigator() {
         <Stack.Screen name="Room" component={RoomScreen} />
         <Stack.Screen name="Wallet" component={WalletScreen} />
         <Stack.Screen name="Vip" component={VipScreen} />
+        <Stack.Screen name="Builder" component={BuilderScreen} />
+        <Stack.Screen name="Gallery" component={GalleryScreen} />
+        <Stack.Screen name="GalleryDetail" component={GalleryDetailScreen} />
       </Stack.Navigator>
       <MusicController />
     </NavigationContainer>

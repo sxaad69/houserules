@@ -9,6 +9,7 @@ import {
 import { Text } from './Text';
 import { useTheme } from '../theme/ThemeProvider';
 import { useThemes } from '../store/themes';
+import { cardBackById } from '../builder/themes';
 import type { Card } from '../engine/cards';
 
 export type CardSize = 'sm' | 'md' | 'lg';
@@ -47,6 +48,11 @@ interface PlayingCardProps {
   size?: CardSize;
   /** Show the card back instead of the face. */
   faceDown?: boolean;
+  /**
+   * Curated card-back design id (builder/themes.ts). When set with faceDown,
+   * renders the designed back instead of the default PNG art.
+   */
+  backId?: string;
   /** Legal play on the human's turn — raised + amber edge. */
   highlighted?: boolean;
   /** Not playable right now. */
@@ -230,6 +236,7 @@ export function PlayingCard({
   card,
   size = 'md',
   faceDown = false,
+  backId,
   highlighted = false,
   dimmed = false,
   onPress,
@@ -253,7 +260,27 @@ export function PlayingCard({
     borderColor: highlighted ? colors.accent : 'rgba(0,0,0,0.25)',
   };
 
-  const inner = faceDown ? (
+  // Builder custom backs take priority; otherwise use the theme library's per-deck back.
+  const customBack = faceDown && backId ? cardBackById(backId) : null;
+  const inner = customBack ? (
+    <View style={{ flex: 1, backgroundColor: customBack.bg, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          position: 'absolute',
+          left: 3,
+          right: 3,
+          top: 3,
+          bottom: 3,
+          borderRadius: d.radius - 2,
+          borderWidth: 1.5,
+          borderColor: customBack.line,
+        }}
+      />
+      <Text variant="h2" style={{ color: customBack.line, fontSize: d.font }}>
+        {customBack.emblem}
+      </Text>
+    </View>
+  ) : faceDown ? (
     <Image source={backFor(card.deck)} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode="cover" />
   ) : (
     <FaceContent card={card} d={d} />
