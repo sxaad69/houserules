@@ -11,6 +11,7 @@ import { GiftPicker } from '../components/GiftPicker';
 import { GiftCelebration } from '../components/GiftCelebration';
 import { useGiftSending } from '../economy/useGiftSending';
 import { crazyGames } from '../integrations/crazygames';
+import { audioManager } from '../audio/manager';
 import { useTheme } from '../theme/ThemeProvider';
 import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
@@ -235,6 +236,7 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
 
   const pickSocial = (kind: 'emote' | 'phrase', value: string) => {
     room.sendEmote(kind, value);
+    audioManager.playSfx('emote');
     setSocialOpen(false);
   };
 

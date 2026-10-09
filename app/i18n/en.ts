@@ -166,6 +166,13 @@ export const en = {
     becomeVip: 'Become VIP',
     settings: 'Settings',
     language: 'Language',
+    sound: 'Sound & Music',
+    music: 'Music',
+    musicVolume: 'Music volume',
+    sfx: 'Sound effects',
+    sfxVolume: 'Effects volume',
+    on: 'On',
+    off: 'Off',
   },
   economy: {
     title: 'Wallet',

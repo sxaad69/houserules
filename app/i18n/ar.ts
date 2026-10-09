@@ -168,6 +168,13 @@ export const ar: Strings = {
     becomeVip: 'اشترك VIP',
     settings: 'الإعدادات',
     language: 'اللغة',
+    sound: 'الصوت والموسيقى',
+    music: 'الموسيقى',
+    musicVolume: 'مستوى الموسيقى',
+    sfx: 'المؤثرات الصوتية',
+    sfxVolume: 'مستوى المؤثرات',
+    on: 'تشغيل',
+    off: 'إيقاف',
   },
   economy: {
     title: 'المحفظة',

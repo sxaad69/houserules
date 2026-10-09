@@ -8,6 +8,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/ThemeProvider';
 import { Text } from './Text';
+import { audioManager } from '../audio/manager';
 
 type ButtonVariant = 'primary' | 'secondary' | 'gold' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -59,6 +60,7 @@ export function Button({
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    audioManager.playSfx('tap');
     onPress();
   };
 

@@ -17,6 +17,7 @@ import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
 import { useThemes } from '../store/themes';
+import { audioManager } from '../audio/manager';
 import {
   applyAction,
   createGame,
@@ -130,6 +131,7 @@ export function TableScreen({ route, navigation }: Props) {
     setWildCard(null);
     lastDiscardLen.current = 0;
     dealAnim.setValue(0);
+    audioManager.playSfx('shuffle');
     Animated.timing(dealAnim, { toValue: 1, duration: 450, useNativeDriver: true })
       .start();
     crazyGames.gameplayStart();
@@ -143,8 +145,39 @@ export function TableScreen({ route, navigation }: Props) {
       lastDiscardLen.current = len;
       popAnim.setValue(0.55);
       Animated.spring(popAnim, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+      // Sound: someone played a card. Wilds get the magic treatment.
+      const top = game.discardPile[game.discardPile.length - 1];
+      if (top && (top.action === 'wild' || top.action === 'wild4')) {
+        audioManager.playSfx('wild');
+      } else {
+        audioManager.playSfx('cardPlay');
+      }
+      // Special card sounds.
+      if (top?.action === 'skip') audioManager.playSfx('skip');
+      if (top?.action === 'reverse') audioManager.playSfx('reverse');
+      if (top?.action === 'draw2' || top?.action === 'wild4') audioManager.playSfx('drawPenalty');
     }
   }, [game?.discardPile.length, game, popAnim]);
+
+  // Sound: your turn chime + game-over fanfare.
+  const lastTurnKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (!game || game.phase !== 'playing') return;
+    const cur = currentPlayer(game);
+    const key = `${cur.id}:${game.discardPile.length}`;
+    if (cur.id === HUMAN_ID && lastTurnKey.current !== key) {
+      lastTurnKey.current = key;
+      audioManager.playSfx('yourTurn');
+    } else if (cur.id !== HUMAN_ID) {
+      lastTurnKey.current = key;
+    }
+  }, [game]);
+  useEffect(() => {
+    if (game?.phase === 'gameOver' && game.winnerId) {
+      audioManager.playSfx(game.winnerId === HUMAN_ID ? 'win' : 'lose');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.phase]);
 
   // Bot driver: when a bot holds the turn, think briefly, then act.
   useEffect(() => {
@@ -195,6 +228,7 @@ export function TableScreen({ route, navigation }: Props) {
 
   const onDraw = () => {
     if (!game || game.phase !== 'playing' || currentPlayer(game).id !== HUMAN_ID) return;
+    audioManager.playSfx('cardDraw');
     tryAction({ type: 'draw', playerId: HUMAN_ID });
   };
 

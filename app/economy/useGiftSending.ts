@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from '../store/session';
+import { audioManager } from '../audio/manager';
 import type { Gift } from './index';
 
 export type GiftError = 'insufficient' | 'vipOnly' | null;
@@ -38,6 +39,7 @@ export function useGiftSending() {
       setError(null);
       setPickerOpen(false);
       setCelebration(gift);
+      audioManager.playSfx('gift');
     },
     [spendCoins, vip],
   );

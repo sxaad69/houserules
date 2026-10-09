@@ -4,6 +4,7 @@ import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
+  useNavigation,
   type Theme as NavigationTheme,
 } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -14,6 +15,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './theme/ThemeProvider';
 import { LocaleProvider, useStrings } from './i18n';
 import { SessionProvider } from './store/session';
+import { AudioProvider } from './store/audio';
+import { audioManager } from './audio/manager';
 import { ThemesProvider } from './store/themes';
 import { HomeScreen } from './screens/HomeScreen';
 import { DecksScreen } from './screens/DecksScreen';
@@ -97,6 +100,25 @@ function Tabs() {
   );
 }
 
+// Switches background music between lobby and table tracks based on the
+// current route. Table/PrivateTable get the in-game track; everything else
+// gets the lobby track.
+function MusicController() {
+  const navigation = useNavigation();
+  useEffect(() => {
+    const update = () => {
+      const state = navigation.getState();
+      const route = state?.routes[state.index];
+      const name = route?.name ?? '';
+      audioManager.playMusic(name === 'Table' || name === 'PrivateTable' ? 'table' : 'lobby');
+    };
+    update();
+    const unsub = navigation.addListener('state', update);
+    return unsub;
+  }, [navigation]);
+  return null;
+}
+
 // Single NavigationContainer for the whole app. Tabs own the bottom nav;
 // Table + PrivateTable push on top as full-screen stacks.
 function RootNavigator() {
@@ -125,6 +147,7 @@ function RootNavigator() {
         <Stack.Screen name="Wallet" component={WalletScreen} />
         <Stack.Screen name="Vip" component={VipScreen} />
       </Stack.Navigator>
+      <MusicController />
     </NavigationContainer>
   );
 }
@@ -159,9 +182,11 @@ export default function App() {
     <ThemeProvider>
       <LocaleProvider>
         <SessionProvider>
-          <ThemesProvider>
-            <AppShell />
-          </ThemesProvider>
+          <AudioProvider>
+            <ThemesProvider>
+              <AppShell />
+            </ThemesProvider>
+          </AudioProvider>
         </SessionProvider>
       </LocaleProvider>
     </ThemeProvider>
