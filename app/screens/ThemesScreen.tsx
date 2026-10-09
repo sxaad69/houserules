@@ -9,6 +9,7 @@ import { useStrings } from '../i18n';
 import { useSession } from '../store/session';
 import { useThemes } from '../store/themes';
 import { BACK_VARIANTS, CARD_BACKS, DECKS, FELTS, type BackVariant, type FeltDef } from '../theme/library';
+import { backRequiredLevel, feltRequiredLevel, useProgression, xpForNextLevel } from '../store/progression';
 import type { DeckKind } from '../engine/types';
 
 // ThemesScreen — the theme library browser. Two sections:
@@ -50,14 +51,20 @@ function BackOption({
   name: string;
 }) {
   const { colors, spacing } = useTheme();
+  const { t } = useStrings();
   const { backVariant, setBackVariant } = useThemes();
+  const { isBackUnlocked } = useProgression();
   const active = backVariant[deck] === variant;
+  const unlocked = isBackUnlocked(deck, variant);
+  const reqLevel = backRequiredLevel(deck, variant);
   const asset = CARD_BACKS.find((d) => d.deck === deck && d.variant === variant)!.asset;
   return (
     <Pressable
-      onPress={() => setBackVariant(deck, variant)}
+      onPress={() => {
+        if (unlocked) setBackVariant(deck, variant);
+      }}
       accessibilityRole="button"
-      accessibilityLabel={name}
+      accessibilityLabel={unlocked ? name : `${name} — ${t.themes.lockedLevel.replace('{n}', String(reqLevel))}`}
       accessibilityState={{ selected: active }}
       style={{ alignItems: 'center', width: BACK_W + 16 }}
     >
@@ -71,9 +78,30 @@ function BackOption({
             borderRadius: 8,
             borderWidth: active ? 3 : 1,
             borderColor: active ? colors.accent : 'rgba(0,0,0,0.25)',
+            opacity: unlocked ? 1 : 0.45,
           }}
           resizeMode="cover"
         />
+        {!unlocked && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: 8,
+              backgroundColor: 'rgba(0,0,0,0.45)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 22 }}>🔒</Text>
+            <Text variant="caption" style={{ color: '#FFFFFF', fontWeight: '800', marginTop: 2 }}>
+              {t.themes.lockedLevel.replace('{n}', String(reqLevel))}
+            </Text>
+          </View>
+        )}
       </View>
       <Text
         variant="caption"
@@ -116,23 +144,32 @@ function FeltOption({ felt, name }: { felt: FeltDef; name: string }) {
   const { t } = useStrings();
   const { vip } = useSession();
   const { feltId, setFeltId } = useThemes();
+  const { isFeltUnlocked } = useProgression();
   const navigation = useNavigation<any>();
   const active = feltId === felt.id;
-  const locked = !!felt.vipOnly && !vip;
+  const vipLocked = !!felt.vipOnly && !vip;
+  const reqLevel = feltRequiredLevel(felt.id);
+  const levelLocked = !felt.vipOnly && reqLevel !== null && !isFeltUnlocked(felt.id);
+  const locked = vipLocked || levelLocked;
 
   const onPress = () => {
-    if (locked) {
+    if (vipLocked) {
       navigation.navigate('Vip');
       return;
     }
+    if (levelLocked) return;
     setFeltId(felt.id);
   };
+
+  const lockLabel = vipLocked
+    ? t.themes.vipOnly
+    : t.themes.lockedLevel.replace('{n}', String(reqLevel));
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={locked ? `${name} — ${t.themes.vipFeltHint}` : name}
+      accessibilityLabel={locked ? `${name} — ${lockLabel}` : name}
       accessibilityState={{ selected: active }}
       style={{ width: '31%', marginBottom: spacing.md }}
     >
@@ -163,9 +200,9 @@ function FeltOption({ felt, name }: { felt: FeltDef; name: string }) {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 26 }}>👑</Text>
-            <Text variant="caption" style={{ color: '#C9A227', fontWeight: '800', marginTop: 2 }}>
-              {t.themes.vipOnly}
+            <Text style={{ fontSize: 26 }}>{vipLocked ? '👑' : '🔒'}</Text>
+            <Text variant="caption" style={{ color: vipLocked ? '#C9A227' : '#FFFFFF', fontWeight: '800', marginTop: 2 }}>
+              {lockLabel}
             </Text>
           </View>
         )}
@@ -188,12 +225,20 @@ function FeltOption({ felt, name }: { felt: FeltDef; name: string }) {
 export function ThemesScreen() {
   const { t } = useStrings();
   const { colors, spacing } = useTheme();
+  const { level, xp } = useProgression();
   const feltNames = t.themes.feltNames as Record<string, string>;
+  const next = xpForNextLevel(level, xp);
   return (
     <Screen>
       <Text variant="h1">{t.themes.title}</Text>
+      <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: spacing.xs }}>
+        {t.progression.level.replace('{n}', String(level))}
+        {next !== null
+          ? ` · ${t.progression.xpToNext.replace('{n}', String(next)).replace('{m}', String(level + 1))}`
+          : ` · ${t.progression.maxLevel}`}
+      </Text>
       <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
-        {t.themes.subtitle}
+        {t.themes.playToUnlock}
       </Text>
 
       {/* Card backs — one row per deck */}

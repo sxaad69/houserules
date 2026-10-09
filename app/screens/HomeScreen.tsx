@@ -19,6 +19,7 @@ import { HouseTableRow, type MockTable } from '../components/HouseTableRow';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
 import { useSession } from '../store/session';
+import { DAILY_COINS, useProgression } from '../store/progression';
 import type { RootStackParamList } from '../navigation';
 import {
   deleteRulebook,
@@ -38,6 +39,57 @@ import {
 } from '../gallery';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tabs'>;
+
+// Daily gift card — streak display + once-per-day coin claim.
+function DailyGiftCard() {
+  const { t } = useStrings();
+  const { colors, spacing, radii } = useTheme();
+  const { addCoins } = useSession();
+  const { streak, canClaimDaily, claimDaily } = useProgression();
+
+  const onClaim = () => {
+    const coins = claimDaily();
+    if (coins > 0) addCoins(coins);
+  };
+
+  return (
+    <TableCard>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: radii.full,
+            backgroundColor: colors.accentMuted,
+            borderWidth: 1.5,
+            borderColor: colors.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ fontSize: 24 }}>🎁</Text>
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text variant="bodyBold" numberOfLines={1}>{t.home.dailyGift}</Text>
+          <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
+            {t.home.streakDays.replace('{n}', String(streak))}
+          </Text>
+        </View>
+        {canClaimDaily ? (
+          <Button
+            title={t.home.claim.replace('{n}', String(DAILY_COINS))}
+            size="sm"
+            onPress={onClaim}
+          />
+        ) : (
+          <Text variant="caption" color={colors.textTertiary} style={{ textAlign: 'right', maxWidth: 110 }}>
+            {t.home.claimed}
+          </Text>
+        )}
+      </View>
+    </TableCard>
+  );
+}
 
 // ponytail: mock tables until engine/realtime hooks up (parallel track).
 // Venue names stay untranslated in both locales — like real casino floors.
@@ -254,6 +306,8 @@ export function HomeScreen({ navigation }: Props) {
 
   const content = (
     <>
+      {/* Daily gift — streak + once-per-day coin claim */}
+      <DailyGiftCard />
       {/* VIP teaser — the one surface where gold is allowed */}
       <TableCard vip>
         <View

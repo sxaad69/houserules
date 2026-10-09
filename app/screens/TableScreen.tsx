@@ -17,7 +17,10 @@ import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
 import { useThemes } from '../store/themes';
+import { useProgression } from '../store/progression';
 import { audioManager } from '../audio/manager';
+import { xpForGame } from '../progression/awards';
+import { loadRivalry, recordRivalry, type RivalryMap } from '../progression/rivalry';
 import {
   applyAction,
   createGame,
@@ -299,6 +302,12 @@ export function TableScreen({ route, navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game?.phase]);
 
+  // Load rivalry records for the game-over display.
+  const [rivalry, setRivalry] = useState<RivalryMap>({});
+  useEffect(() => {
+    loadRivalry().then(setRivalry).catch(() => {});
+  }, []);
+
   // Move timer: reset the countdown whenever the turn passes to the human.
   // turnSeconds 0 = no timer (house tables keep their relaxed pace).
   useEffect(() => {
@@ -334,6 +343,25 @@ export function TableScreen({ route, navigation }: Props) {
     countedGameRef.current = key;
     recordPlay(custom.id).catch(() => {});
   }, [custom, game, roundKey]);
+
+  // Phase C: XP + rivalry, recorded once per finished game (all tables).
+  const { addXp } = useProgression();
+  const xpCountedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!game || game.phase !== 'gameOver' || !game.winnerId) return;
+    const key = `xp:${route.params.tableId}:${roundKey}`;
+    if (xpCountedRef.current === key) return;
+    xpCountedRef.current = key;
+    const humanWon = game.winnerId === HUMAN_ID;
+    addXp(xpForGame(humanWon));
+    const winner = game.players.find((p) => p.id === game.winnerId);
+    const bots = game.players.filter((p) => p.isBot).map((p) => p.name);
+    const human = game.players.find((p) => p.id === HUMAN_ID);
+    recordRivalry(bots, winner?.name ?? '', human?.name ?? t.table.you)
+      .then(setRivalry)
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game?.phase, roundKey]);
 
   // Bot driver: when a bot holds the turn, think briefly, then act.
   // Human-like pace (1.5–3s). When a move timer is on, always act with
@@ -744,6 +772,29 @@ export function TableScreen({ route, navigation }: Props) {
                   <Text variant="body" color={colors.accent} style={{ marginTop: spacing.sm, textAlign: 'center', fontWeight: '700' }}>
                     {t.table.claimsTitle.replace('{animal}', game.winningCard.animal.toUpperCase())}
                   </Text>
+                )}
+                {/* Phase C: head-to-head rivalry records */}
+                {opponents.length > 0 && (
+                  <View style={{ marginTop: spacing.md, width: '100%' }}>
+                    <Text variant="overline" color={colors.textTertiary} style={{ textAlign: 'center', marginBottom: spacing.xs }}>
+                      {t.rivalry.title}
+                    </Text>
+                    {opponents.map((p) => {
+                      const rec = rivalry[p.name];
+                      if (!rec || (rec.wins === 0 && rec.losses === 0)) return null;
+                      return (
+                        <View
+                          key={p.id}
+                          style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}
+                        >
+                          <Text variant="bodySmall" color={colors.textSecondary}>{p.name}</Text>
+                          <Text variant="bodySmall" color={colors.textPrimary} style={{ fontWeight: '700' }}>
+                            {t.rivalry.you} {rec.wins} — {rec.losses} {p.name}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
                 )}
                 <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg }}>
                   <Button title={t.table.rematch} onPress={() => setRoundKey((k) => k + 1)} />

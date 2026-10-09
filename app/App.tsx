@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -17,6 +18,7 @@ import { LocaleProvider, useStrings } from './i18n';
 import { SessionProvider } from './store/session';
 import { AudioProvider } from './store/audio';
 import { audioManager } from './audio/manager';
+import { ProgressionProvider } from './store/progression';
 import { ThemesProvider } from './store/themes';
 import { HomeScreen } from './screens/HomeScreen';
 import { DecksScreen } from './screens/DecksScreen';
@@ -31,6 +33,7 @@ import { VipScreen } from './screens/VipScreen';
 import { BuilderScreen } from './screens/BuilderScreen';
 import { GalleryScreen } from './screens/GalleryScreen';
 import { GalleryDetailScreen } from './screens/GalleryDetailScreen';
+import { OnboardingScreen, ONBOARDED_KEY } from './screens/OnboardingScreen';
 import type { RootTabParamList, RootStackParamList } from './navigation';
 
 // One stack per tab so each tab keeps its own navigation history.
@@ -160,10 +163,23 @@ function RootNavigator() {
 
 function AppShell() {
   const { colorScheme } = useTheme();
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
   // CrazyGames SDK v3: init once on web boot; no-op everywhere else.
   useEffect(() => {
     import('./integrations/crazygames').then(({ crazyGames }) => crazyGames.init());
+    AsyncStorage.getItem(ONBOARDED_KEY)
+      .then((v) => setOnboarded(v === '1'))
+      .catch(() => setOnboarded(true)); // storage failure → don't block
   }, []);
+  if (onboarded === null) return null; // boot splash covers this
+  if (!onboarded) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <OnboardingScreen onDone={() => setOnboarded(true)} />
+      </SafeAreaProvider>
+    );
+  }
   return (
     <SafeAreaProvider>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -190,7 +206,9 @@ export default function App() {
         <SessionProvider>
           <AudioProvider>
             <ThemesProvider>
-              <AppShell />
+              <ProgressionProvider>
+                <AppShell />
+              </ProgressionProvider>
             </ThemesProvider>
           </AudioProvider>
         </SessionProvider>
