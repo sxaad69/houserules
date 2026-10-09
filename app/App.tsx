@@ -144,6 +144,17 @@ function AppShell() {
 }
 
 export default function App() {
+  // Dismiss the web boot splash once React has mounted (native uses expo-splash-screen).
+  React.useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const el = document.getElementById('hr-splash');
+      if (el) {
+        el.style.transition = 'opacity 0.6s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 650);
+      }
+    }
+  }, []);
   return (
     <ThemeProvider>
       <LocaleProvider>
