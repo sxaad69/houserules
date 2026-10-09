@@ -1,184 +1,220 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
-import { PlayingCard } from '../components/PlayingCard';
 import { TableCard } from '../components/TableCard';
 import { useTheme } from '../theme/ThemeProvider';
 import { useStrings } from '../i18n';
-import { BOT_PERSONAS } from '../bots/personas';
-import type { Card } from '../engine/cards';
+import { useSession } from '../store/session';
+import { useThemes } from '../store/themes';
+import { BACK_VARIANTS, CARD_BACKS, DECKS, FELTS, type BackVariant, type FeltDef } from '../theme/library';
 import type { DeckKind } from '../engine/types';
-import { TABLE_THEMES } from '../theme/tableThemes';
 
-// Felt each deck plays on — from the shared table themes.
-const THEMES: { deck: DeckKind; overlay: string; opacity: number; mood: string }[] = [
-  { deck: 'classic52', ...TABLE_THEMES.classic52, mood: 'Emerald Classic' },
-  { deck: 'uno108', ...TABLE_THEMES.uno108, mood: 'Midnight Indigo' },
-  { deck: 'baloot32', ...TABLE_THEMES.baloot32, mood: 'Desert Night Bronze' },
-  { deck: 'animals12', ...TABLE_THEMES.animals12, mood: 'Deep Jungle Green' },
-];
+// ThemesScreen — the theme library browser. Two sections:
+// 1. Card backs, grouped by deck (3 each, tap to select)
+// 2. Table felts, grid of 9 (royal is VIP-only)
 
-const deckNameKey = { classic52: 'classic52', uno108: 'uno108', baloot32: 'baloot32', animals12: 'animals12' } as const;
+const BACK_W = 62;
+const BACK_H = 90;
 
-function sample(id: string, deck: DeckKind, rest: Partial<Card>): Card {
-  return { id, deck, color: null, suit: null, rank: '', action: null, animal: null, ...rest };
+function CheckBadge() {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.accent,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2,
+      }}
+    >
+      <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>✓</Text>
+    </View>
+  );
 }
 
-// Hand-picked showpieces per deck — the cards that sell the theme.
-const SAMPLES: Record<DeckKind, Card[]> = {
-  classic52: [
-    sample('t-1', 'classic52', { suit: 'spades', rank: 'A' }),
-    sample('t-2', 'classic52', { suit: 'hearts', rank: 'K' }),
-    sample('t-3', 'classic52', { suit: 'diamonds', rank: 'Q' }),
-  ],
-  uno108: [
-    sample('t-4', 'uno108', { color: 'red', rank: '7' }),
-    sample('t-5', 'uno108', { color: 'blue', rank: 'skip', action: 'skip' }),
-    sample('t-6', 'uno108', { rank: 'wild', action: 'wild' }),
-  ],
-  baloot32: [
-    sample('t-7', 'baloot32', { suit: 'clubs', rank: 'A' }),
-    sample('t-8', 'baloot32', { suit: 'hearts', rank: '10' }),
-    sample('t-9', 'baloot32', { suit: 'spades', rank: '7' }),
-  ],
-  animals12: [
-    sample('t-10', 'animals12', { color: 'red', rank: 'lion', animal: 'lion' }),
-    sample('t-11', 'animals12', { color: 'blue', rank: 'falcon', animal: 'falcon' }),
-    sample('t-12', 'animals12', { color: 'green', rank: 'cobra', animal: 'cobra' }),
-  ],
-};
+function BackOption({
+  deck,
+  variant,
+  name,
+}: {
+  deck: DeckKind;
+  variant: BackVariant;
+  name: string;
+}) {
+  const { colors, spacing } = useTheme();
+  const { backVariant, setBackVariant } = useThemes();
+  const active = backVariant[deck] === variant;
+  const asset = CARD_BACKS.find((d) => d.deck === deck && d.variant === variant)!.asset;
+  return (
+    <Pressable
+      onPress={() => setBackVariant(deck, variant)}
+      accessibilityRole="button"
+      accessibilityLabel={name}
+      accessibilityState={{ selected: active }}
+      style={{ alignItems: 'center', width: BACK_W + 16 }}
+    >
+      <View>
+        {active && <CheckBadge />}
+        <Image
+          source={asset}
+          style={{
+            width: BACK_W,
+            height: BACK_H,
+            borderRadius: 8,
+            borderWidth: active ? 3 : 1,
+            borderColor: active ? colors.accent : 'rgba(0,0,0,0.25)',
+          }}
+          resizeMode="cover"
+        />
+      </View>
+      <Text
+        variant="caption"
+        style={{
+          marginTop: 4,
+          textAlign: 'center',
+          fontWeight: active ? '800' : '400',
+          color: active ? colors.textPrimary : colors.textSecondary,
+        }}
+      >
+        {name}
+      </Text>
+      <Text variant="caption" color={colors.textTertiary} style={{ marginTop: spacing.xs }}>
+        {variant.toUpperCase()}
+      </Text>
+    </Pressable>
+  );
+}
 
-const DIFF_COLOR: Record<string, string> = { easy: '#3FA34D', medium: '#D9A62E', hard: '#D64545' };
-
-function ThemeSection({ deck, overlay, opacity, mood }: { deck: DeckKind; overlay: string; opacity: number; mood: string }) {
+function BackSection({ deck }: { deck: DeckKind }) {
   const { t } = useStrings();
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing } = useTheme();
+  const names = t.themes.backNames as Record<string, string>;
   return (
     <TableCard>
-      <Text variant="h2">{t.decks[deckNameKey[deck]]}</Text>
-      <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
-        {mood}
+      <Text variant="h2" style={{ marginBottom: spacing.sm }}>
+        {t.decks[deck]}
       </Text>
-      {/* Felt preview — the table surface for this theme */}
-      <View
-        style={{
-          height: 110,
-          borderRadius: radii.md,
-          backgroundColor: colors.feltDeep,
-          overflow: 'hidden',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: spacing.sm,
-        }}
-        accessibilityLabel={`${mood} felt preview`}
-      >
-        <View
-          style={{
-            ...{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-            backgroundColor: overlay,
-            opacity,
-          }}
-        />
-        <Text variant="h3" style={{ color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}>
-          {mood}
-        </Text>
-      </View>
-      {/* Faces + back */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        {SAMPLES[deck].map((card) => (
-          <PlayingCard key={card.id} card={card} size="md" />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+        {BACK_VARIANTS.map((v) => (
+          <BackOption key={v} deck={deck} variant={v} name={names[`${deck}-${v}`] ?? v} />
         ))}
-        <View style={{ marginLeft: 'auto', alignItems: 'center' }}>
-          <PlayingCard card={sample('back', deck, {})} size="md" faceDown />
-          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
-            {t.themes.back}
-          </Text>
-        </View>
       </View>
     </TableCard>
   );
 }
 
-export function ThemesScreen() {
-  const { t } = useStrings();
+function FeltOption({ felt, name }: { felt: FeltDef; name: string }) {
   const { colors, spacing, radii } = useTheme();
-  return (
-    <Screen>
-      <Text variant="h1">{t.themes.title}</Text>
-      <Text variant="bodySmall" color={colors.textSecondary}>
-        {t.themes.subtitle}
-      </Text>
+  const { t } = useStrings();
+  const { vip } = useSession();
+  const { feltId, setFeltId } = useThemes();
+  const navigation = useNavigation<any>();
+  const active = feltId === felt.id;
+  const locked = !!felt.vipOnly && !vip;
 
-      {/* Your profile */}
-      <TableCard>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+  const onPress = () => {
+    if (locked) {
+      navigation.navigate('Vip');
+      return;
+    }
+    setFeltId(felt.id);
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={locked ? `${name} — ${t.themes.vipFeltHint}` : name}
+      accessibilityState={{ selected: active }}
+      style={{ width: '31%', marginBottom: spacing.md }}
+    >
+      <View>
+        {active && <CheckBadge />}
+        <Image
+          source={felt.asset}
+          style={{
+            width: '100%',
+            height: 110,
+            borderRadius: radii.md,
+            borderWidth: active ? 3 : 1,
+            borderColor: active ? colors.accent : colors.border,
+          }}
+          resizeMode="cover"
+        />
+        {locked && (
           <View
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: colors.surfaceAlt,
-              borderWidth: 2,
-              borderColor: colors.accent,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: radii.md,
+              backgroundColor: 'rgba(0,0,0,0.55)',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 30 }}>🎮</Text>
-          </View>
-          <View>
-            <Text variant="h2">{t.table.you}</Text>
-            <Text variant="bodySmall" color={colors.textSecondary}>
-              {t.themes.yourAvatar}
+            <Text style={{ fontSize: 26 }}>👑</Text>
+            <Text variant="caption" style={{ color: '#C9A227', fontWeight: '800', marginTop: 2 }}>
+              {t.themes.vipOnly}
             </Text>
           </View>
-        </View>
-      </TableCard>
+        )}
+      </View>
+      <Text
+        variant="caption"
+        style={{
+          marginTop: 4,
+          textAlign: 'center',
+          fontWeight: active ? '800' : '400',
+          color: active ? colors.textPrimary : colors.textSecondary,
+        }}
+      >
+        {name}
+      </Text>
+    </Pressable>
+  );
+}
 
-      {THEMES.map((th) => (
-        <ThemeSection key={th.deck} {...th} />
+export function ThemesScreen() {
+  const { t } = useStrings();
+  const { colors, spacing } = useTheme();
+  const feltNames = t.themes.feltNames as Record<string, string>;
+  return (
+    <Screen>
+      <Text variant="h1">{t.themes.title}</Text>
+      <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+        {t.themes.subtitle}
+      </Text>
+
+      {/* Card backs — one row per deck */}
+      <Text variant="h2" style={{ marginBottom: spacing.sm }}>
+        {t.themes.cardBacks}
+      </Text>
+      {DECKS.map((deck) => (
+        <BackSection key={deck} deck={deck} />
       ))}
 
-      {/* Avatar roster — every bot persona at the table */}
+      {/* Table felts */}
+      <Text variant="h2" style={{ marginBottom: spacing.xs }}>
+        {t.themes.tableFelts}
+      </Text>
+      <Text variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
+        {t.themes.vipFeltHint}
+      </Text>
       <TableCard>
-        <Text variant="h2" style={{ marginBottom: spacing.sm }}>
-          {t.themes.avatars}
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-          {BOT_PERSONAS.map((p) => (
-            <View key={p.name} style={{ width: '30%', alignItems: 'center' }}>
-              <View
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
-                  backgroundColor: colors.surfaceAlt,
-                  borderWidth: 2,
-                  borderColor: colors.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 28 }}>{p.avatar}</Text>
-              </View>
-              <Text variant="caption" style={{ fontWeight: '700', marginTop: 4 }}>
-                {p.name}
-              </Text>
-              <View
-                style={{
-                  marginTop: 2,
-                  paddingHorizontal: 8,
-                  paddingVertical: 1,
-                  borderRadius: radii.full,
-                  backgroundColor: DIFF_COLOR[p.difficulty] + '22',
-                }}
-              >
-                <Text variant="caption" style={{ color: DIFF_COLOR[p.difficulty], fontWeight: '700' }}>
-                  {p.difficulty}
-                </Text>
-              </View>
-            </View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          {FELTS.map((f) => (
+            <FeltOption key={f.id} felt={f} name={feltNames[f.nameKey] ?? f.id} />
           ))}
         </View>
       </TableCard>

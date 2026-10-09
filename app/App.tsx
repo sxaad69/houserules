@@ -14,6 +14,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './theme/ThemeProvider';
 import { LocaleProvider, useStrings } from './i18n';
 import { SessionProvider } from './store/session';
+import { ThemesProvider } from './store/themes';
 import { HomeScreen } from './screens/HomeScreen';
 import { DecksScreen } from './screens/DecksScreen';
 import { ThemesScreen } from './screens/ThemesScreen';
@@ -147,7 +148,9 @@ export default function App() {
     <ThemeProvider>
       <LocaleProvider>
         <SessionProvider>
-          <AppShell />
+          <ThemesProvider>
+            <AppShell />
+          </ThemesProvider>
         </SessionProvider>
       </LocaleProvider>
     </ThemeProvider>

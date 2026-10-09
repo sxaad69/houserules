@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Text } from './Text';
 import { useTheme } from '../theme/ThemeProvider';
+import { useThemes } from '../store/themes';
 import type { Card } from '../engine/cards';
 
 export type CardSize = 'sm' | 'md' | 'lg';
@@ -40,8 +41,6 @@ const ACTION_LABEL: Record<string, string> = {
   wild: 'WILD',
   wild4: '+4',
 };
-
-const CARD_BACK = require('../assets/card-back.png');
 
 interface PlayingCardProps {
   card: Card;
@@ -239,6 +238,7 @@ export function PlayingCard({
   testID,
 }: PlayingCardProps) {
   const { colors, spacing } = useTheme();
+  const { backFor } = useThemes();
   const d = DIMS[size];
 
   const frame: ViewStyle = {
@@ -254,7 +254,7 @@ export function PlayingCard({
   };
 
   const inner = faceDown ? (
-    <Image source={CARD_BACK} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode="cover" />
+    <Image source={backFor(card.deck)} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode="cover" />
   ) : (
     <FaceContent card={card} d={d} />
   );

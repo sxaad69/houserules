@@ -16,6 +16,7 @@ import { SeatView } from '../components/SeatView';
 import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
 import { useTheme } from '../theme/ThemeProvider';
+import { useThemes } from '../store/themes';
 import {
   applyAction,
   createGame,
@@ -39,7 +40,7 @@ import type { RootStackParamList } from '../navigation';
 type Props = NativeStackScreenProps<RootStackParamList, 'Table'>;
 
 const HUMAN_ID = 'you';
-const FELT = require('../assets/felt.jpg');
+/** Selected table felt from the theme library (was: single felt.jpg). */
 /**
  * Per-deck table theming (spec §10: theming system, not one palette).
  * The felt texture stays; a deck-tinted overlay sets the atmosphere.
@@ -90,6 +91,7 @@ function buildSeats(tableId: string): { seats: SeatInput[]; difficulties: Record
 export function TableScreen({ route, navigation }: Props) {
   const { t } = useStrings();
   const { colors, spacing, radii } = useTheme();
+  const { felt } = useThemes();
 
   const deck = route.params.deck ?? 'uno108';
   const template = route.params.template ?? 'shedding';
@@ -238,7 +240,7 @@ export function TableScreen({ route, navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.feltDeep }}>
-      <ImageBackground source={FELT} style={{ flex: 1 }} resizeMode="cover">
+      <ImageBackground source={felt()} style={{ flex: 1 }} resizeMode="cover">
         {tableTheme.opacity > 0 && (
           <View
             style={{

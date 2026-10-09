@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, Image, Pressable, ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Screen } from '../components/Screen';
 import { Text } from '../components/Text';
@@ -15,6 +15,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { TABLE_THEMES } from '../theme/tableThemes';
 import { useStrings } from '../i18n';
 import { useSession } from '../store/session';
+import { useThemes } from '../store/themes';
 import { avatarForName } from '../bots/personas';
 import { useRoom, type LiveEmote, type RoomRole } from '../realtime/useRoom';
 import { EMOTES, PHRASE_KEYS, generateRoomCode, type PhraseKey } from '../realtime/protocol';
@@ -220,6 +221,7 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
   const { t } = useStrings();
   const { colors, spacing, radii } = useTheme();
   const { playerId } = useSession();
+  const { felt } = useThemes();
   const [wildCard, setWildCard] = useState<Card | null>(null);
   const gift = useGiftSending();
 
@@ -267,6 +269,11 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.feltDeep }}>
+      <Image
+        source={felt()}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }}
+        resizeMode="cover"
+      />
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.overlay, opacity: theme.opacity }} />
 
       {/* top bar */}
