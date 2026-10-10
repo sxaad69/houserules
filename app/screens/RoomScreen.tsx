@@ -269,6 +269,38 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
   const isWild = (c: Card) => c.action === 'wild' || c.action === 'wild4';
   const [socialOpen, setSocialOpen] = useState(false);
 
+  // Move timer: 30s per turn. Resets when my turn starts; auto-plays at zero.
+  const TURN_SECONDS = 30;
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const turnKey = `${ps.turn}:${ps.round}`;
+
+  useEffect(() => {
+    if (!room.isMyTurn || ps.phase !== 'playing') {
+      setTimeLeft(null);
+      return;
+    }
+    setTimeLeft(TURN_SECONDS);
+  }, [room.isMyTurn, ps.phase, turnKey]);
+
+  useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) {
+      // Auto-play: random legal card, or draw if none.
+      const legalIds = ps.legalByPlayer[playerId] ?? [];
+      if (legalIds.length > 0) {
+        const cardId = legalIds[Math.floor(Math.random() * legalIds.length)];
+        room.sendAction({ type: 'play', playerId, cardId });
+      } else {
+        room.sendAction({ type: 'draw', playerId });
+      }
+      setTimeLeft(null);
+      return;
+    }
+    if (timeLeft <= 5) audioManager.playSfx('tick');
+    const id = setTimeout(() => setTimeLeft((t) => (t === null ? null : t - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [timeLeft]);
+
   const pickSocial = (kind: 'emote' | 'phrase', value: string) => {
     room.sendEmote(kind, value);
     audioManager.playSfx('emote');
@@ -375,7 +407,27 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
       </View>
 
       {/* status */}
-      <View style={{ position: 'absolute', bottom: 150, alignSelf: 'center' }}>
+      <View style={{ position: 'absolute', bottom: 150, alignSelf: 'center', alignItems: 'center' }}>
+        {room.isMyTurn && timeLeft !== null && (
+          <View
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 23,
+              borderWidth: 3,
+              borderColor: timeLeft <= 5 ? colors.danger : colors.accent,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: spacing.xs,
+            }}
+            accessibilityLabel={`${timeLeft} seconds left`}
+          >
+            <Text variant="h3" style={{ color: '#FFFFFF' }}>
+              {timeLeft}
+            </Text>
+          </View>
+        )}
         <Text variant="bodySmall" style={{ color: '#fff', fontWeight: '600' }}>
           {ps.status || (room.isMyTurn ? t.table.yourTurn : '')}
         </Text>
