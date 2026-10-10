@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   NavigationContainer,
@@ -167,6 +167,7 @@ function RootNavigator() {
 
 function AppShell() {
   const { colorScheme } = useTheme();
+  const { colors } = useTheme();
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   // CrazyGames SDK v3: init once on web boot; no-op everywhere else.
   useEffect(() => {
@@ -176,18 +177,26 @@ function AppShell() {
       .catch(() => setOnboarded(true)); // storage failure → don't block
   }, []);
   if (onboarded === null) return null; // boot splash covers this
-  if (!onboarded) {
-    return (
-      <SafeAreaProvider>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <OnboardingScreen onDone={() => setOnboarded(true)} />
-      </SafeAreaProvider>
-    );
-  }
+
+  // Web: constrain to phone width centered on the page. Native: full-bleed.
+  const content = !onboarded ? (
+    <OnboardingScreen onDone={() => setOnboarded(true)} />
+  ) : (
+    <RootNavigator />
+  );
+
   return (
     <SafeAreaProvider>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <RootNavigator />
+      {Platform.OS === 'web' ? (
+        <View style={{ flex: 1, backgroundColor: '#0B1F16', alignItems: 'center' }}>
+          <View style={{ width: '100%', maxWidth: 430, flex: 1, backgroundColor: colors.background }}>
+            {content}
+          </View>
+        </View>
+      ) : (
+        content
+      )}
     </SafeAreaProvider>
   );
 }

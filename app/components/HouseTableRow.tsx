@@ -6,7 +6,7 @@ import { Button } from './Button';
 import { TableCard } from './TableCard';
 import { useStrings } from '../i18n';
 import { summarizeRulebook } from '../builder/summary';
-import { DEFAULT_SPECIALS } from '../builder/types';
+import { DEFAULT_DRAFT } from '../builder/types';
 import type { DeckKind, RuleTemplate } from '../engine/types';
 
 // ponytail: mock shape lives next to the row that renders it; the engine
@@ -97,7 +97,7 @@ export function HouseTableRow({ table, index, onJoin }: Props) {
     {
       template: table.template,
       deck: table.deck,
-      specials: { ...DEFAULT_SPECIALS },
+      specials: { ...DEFAULT_DRAFT.specials },
       winCondition: table.template === 'pointsRace' ? 'lowestScore' : 'emptyHand',
       playerCount: table.capacity,
       turnSeconds: 30,
