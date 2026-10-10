@@ -48,12 +48,14 @@ export function ProfileScreen({ navigation }: { navigation: any }) {
           onPress={() => navigation.navigate('Vip')}
         />
         <View style={{ height: spacing.sm }} />
-        <Button
-          title={`${t.economy.testToggle}: ${vip ? 'ON' : 'OFF'}`}
-          variant="secondary"
-          size="sm"
-          onPress={() => setVip(!vip)}
-        />
+        {__DEV__ ? (
+          <Button
+            title={`${t.economy.testToggle}: ${vip ? 'ON' : 'OFF'}`}
+            variant="secondary"
+            size="sm"
+            onPress={() => setVip(!vip)}
+          />
+        ) : null}
       </TableCard>
 
       {animalTitles.length > 0 && (
