@@ -114,9 +114,6 @@ function BackOption({
       >
         {name}
       </Text>
-      <Text variant="caption" color={colors.textTertiary} style={{ marginTop: spacing.xs }}>
-        {variant.toUpperCase()}
-      </Text>
     </Pressable>
   );
 }

@@ -66,8 +66,13 @@ export function SettingsScreen({ navigation }: { navigation: any }) {
   return (
     <Screen>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Text variant="h2">‹</Text>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          style={{ padding: spacing.sm, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+          accessibilityLabel="Back"
+        >
+          <Text style={{ fontSize: 28, lineHeight: 28, color: colors.textPrimary }}>‹</Text>
         </Pressable>
         <Text variant="h1">⚙️ {t.profile.settings}</Text>
       </View>

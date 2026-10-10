@@ -178,7 +178,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
             title={last ? t.onboarding.start : t.onboarding.next}
             onPress={() => (last ? finish() : setPage(page + 1))}
           />
-          {!last && (
+          {!last && page > 0 && (
             <Button title={t.onboarding.back} variant="ghost" onPress={() => setPage(Math.max(0, page - 1))} />
           )}
           <Pressable onPress={() => setGuideOpen(true)} accessibilityRole="button" style={{ alignItems: 'center', padding: spacing.sm }}>

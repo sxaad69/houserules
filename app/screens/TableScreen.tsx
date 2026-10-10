@@ -493,9 +493,9 @@ export function TableScreen({ route, navigation }: Props) {
               accessibilityLabel={t.table.leave}
               accessibilityRole="button"
               hitSlop={spacing.md}
-              style={{ padding: spacing.xs }}
+              style={{ padding: spacing.sm, minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
             >
-              <Text variant="h2" style={{ color: '#FFFFFF' }}>‹</Text>
+              <Text style={{ fontSize: 28, lineHeight: 28, color: '#FFFFFF' }}>‹</Text>
             </Pressable>
             <Text variant="bodySmall" style={{ color: '#FFFFFF', fontWeight: '700', letterSpacing: 2 }}>
               {`${t.table.round} ${game.round}${game.template === 'pointsRace' ? `/${game.rounds}` : ''} · ${template === 'shedding' ? 'SHEDDING' : 'POINTS'}`}
@@ -721,8 +721,9 @@ export function TableScreen({ route, navigation }: Props) {
               >
                 {me.hand.map((card, i) => {
                   const playable = legalIds.has(card.id);
+                  // Less overlap = more readable. 70px card, 22px overlap = 48px visible.
                   return (
-                    <View key={card.id} style={{ marginLeft: i === 0 ? 0 : -34 }}>
+                    <View key={card.id} style={{ marginLeft: i === 0 ? 0 : -22 }}>
                       <PlayingCard
                         card={card}
                         size="lg"

@@ -287,6 +287,9 @@ export function BuilderScreen({ navigation, route }: Props) {
         <View style={card(true)}>
           <Text variant="bodyBold" color={colors.textPrimary}>{t.builder.firstToEmpty}</Text>
           <Text variant="bodySmall" color={colors.textSecondary}>{t.builder.firstToEmptySub}</Text>
+          <Text variant="caption" color={colors.textTertiary} style={{ marginTop: spacing.xs }}>
+            {t.builder.sheddingWinNote ?? 'Shedding games always end when someone empties their hand.'}
+          </Text>
         </View>
       ) : (
         <>

@@ -275,6 +275,7 @@ export const en = {
     winTitle: 'How do you win?',
     firstToEmpty: 'First to empty hand',
     firstToEmptySub: 'The round ends the moment someone sheds their last card.',
+    sheddingWinNote: 'Shedding games always end when someone empties their hand — no choice needed.',
     lowestScore: 'Lowest score wins',
     lowestScoreSub: 'Bank leftover points each round. Fewest total wins.',
     rounds: 'Rounds',

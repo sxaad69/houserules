@@ -9,7 +9,7 @@ export const ar: Strings = {
   tabs: {
     home: 'الرئيسية',
     decks: 'الأوراق',
-    boards: 'المتصدرون',
+    boards: 'الأوائل',
     profile: 'حسابي',
   },
   home: {
@@ -277,6 +277,7 @@ export const ar: Strings = {
     winTitle: 'كيف تفوز؟',
     firstToEmpty: 'أول من يفرغ يده',
     firstToEmptySub: 'تنتهي الجولة لحظة تخلص أحدهم من آخر ورقة.',
+    sheddingWinNote: 'ألعاب التخلص تنتهي دائمًا عندما يفرغ أحدهم يده — لا حاجة للاختيار.',
     lowestScore: 'أقل نقاط يفوز',
     lowestScoreSub: 'اجمع نقاط الورق المتبقي كل جولة. الأقل مجموعاً يفوز.',
     rounds: 'الجولات',

@@ -78,8 +78,8 @@ export function summarizeRulebook(rb: Summarizable, locale: 'en' | 'ar' = 'en'):
 
   const short = [
     t(TEMPLATE_NAMES[rb.template]),
-    `${rb.playerCount}P`,
-    rb.turnSeconds > 0 ? `${rb.turnSeconds}s` : null,
+    locale === 'ar' ? `${rb.playerCount} لاعبين` : `${rb.playerCount}P`,
+    rb.turnSeconds > 0 ? (locale === 'ar' ? `${rb.turnSeconds} ث` : `${rb.turnSeconds}s`) : null,
   ]
     .filter(Boolean)
     .join(' · ');
