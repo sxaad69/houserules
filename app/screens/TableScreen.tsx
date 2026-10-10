@@ -122,7 +122,7 @@ export function TableScreen({ route, navigation }: Props) {
         winCondition: template === 'pointsRace' ? 'lowestScore' : 'emptyHand',
         minPlayers: 2,
         maxPlayers: 8,
-        turnSeconds: 0,
+        turnSeconds: 30,
       },
     [custom, deck, template],
   );

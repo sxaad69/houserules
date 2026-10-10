@@ -96,6 +96,7 @@ export const ar: Strings = {
     baloot32Sub: 'من ٧ للآس. مجموعة أسرع وأكثر إثارة.',
     animals12: 'الحيوانات ١٢',
     animals12Sub: 'اكسب الجولة وامتلك الحيوان.',
+    howToPlay: 'كيف تلعب',
   },
   themes: {
     title: 'السمات',

@@ -5,6 +5,8 @@ import { Text } from './Text';
 import { Button } from './Button';
 import { TableCard } from './TableCard';
 import { useStrings } from '../i18n';
+import { summarizeRulebook } from '../builder/summary';
+import { DEFAULT_SPECIALS } from '../builder/types';
 import type { DeckKind, RuleTemplate } from '../engine/types';
 
 // ponytail: mock shape lives next to the row that renders it; the engine
@@ -61,7 +63,7 @@ function AvatarStack({ players }: { players: { initials: string }[] }) {
  * (Skia/Lottie/haptics) is a later step per the art-pass brief.
  */
 export function HouseTableRow({ table, index, onJoin }: Props) {
-  const { t } = useStrings();
+  const { t, locale } = useStrings();
   const { colors, spacing, radii } = useTheme();
   const fade = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(16)).current;
@@ -90,6 +92,18 @@ export function HouseTableRow({ table, index, onJoin }: Props) {
   const deckLabel = t.decks[table.deck];
   const templateLabel =
     table.template === 'shedding' ? t.home.shedding : t.home.pointsRace;
+  // Rules summary: plain-language description of this table's rules.
+  const summary = summarizeRulebook(
+    {
+      template: table.template,
+      deck: table.deck,
+      specials: { ...DEFAULT_SPECIALS },
+      winCondition: table.template === 'pointsRace' ? 'lowestScore' : 'emptyHand',
+      playerCount: table.capacity,
+      turnSeconds: 30,
+    },
+    locale === 'ar' ? 'ar' : 'en',
+  );
 
   return (
     <Animated.View
@@ -110,6 +124,9 @@ export function HouseTableRow({ table, index, onJoin }: Props) {
             <Text variant="bodyBold">{table.name}</Text>
             <Text variant="caption" color={colors.textSecondary}>
               {deckLabel} • {templateLabel}
+            </Text>
+            <Text variant="caption" color={colors.textTertiary} numberOfLines={2}>
+              {summary.short}
             </Text>
           </View>
           <Button

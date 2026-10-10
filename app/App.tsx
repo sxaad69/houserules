@@ -25,6 +25,7 @@ import { DecksScreen } from './screens/DecksScreen';
 import { ThemesScreen } from './screens/ThemesScreen';
 import { LeaderboardsScreen } from './screens/LeaderboardsScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { SettingsScreen } from './screens/SettingsScreen';
 import { TableScreen } from './screens/TableScreen';
 import { PrivateTableScreen } from './screens/PrivateTableScreen';
 import { RoomScreen } from './screens/RoomScreen';
@@ -99,7 +100,10 @@ function Tabs() {
       />
       <Tab.Screen
         name="Profile"
-        component={tabStack([{ name: 'ProfileHome', component: ProfileScreen }])}
+        component={tabStack([
+          { name: 'ProfileHome', component: ProfileScreen },
+          { name: 'Settings', component: SettingsScreen },
+        ])}
         options={{ title: t.tabs.profile }}
       />
     </Tab.Navigator>

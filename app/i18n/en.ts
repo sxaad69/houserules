@@ -94,6 +94,7 @@ export const en = {
     baloot32Sub: '7 through Ace. A tighter, faster shedding deck.',
     animals12: 'Animals 12',
     animals12Sub: 'Win the round, claim the animal.',
+    howToPlay: 'How to play',
   },
   themes: {
     title: 'Themes',
