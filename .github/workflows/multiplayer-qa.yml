@@ -1,0 +1,60 @@
+name: Multiplayer QA — two-player private table
+
+# Runs a real two-browser multiplayer test on GitHub runners (which have
+# full websocket access, unlike the dev VM). Tests: room creation, guest
+# join, game start, moves, draws, timer, and hand sync.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'app/realtime/**'
+      - 'app/screens/RoomScreen.tsx'
+      - 'app/screens/PrivateTableScreen.tsx'
+
+jobs:
+  multiplayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install app deps
+        working-directory: app
+        run: npm ci
+
+      - name: Export web build
+        working-directory: app
+        run: |
+          npx expo export --platform web
+          node scripts/inject-web-splash.js dist
+
+      - name: Serve web build
+        working-directory: app/dist
+        run: |
+          nohup python3 -m http.server 8080 &
+          sleep 3
+          curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright-core
+          npx playwright-core install chromium --with-deps 2>/dev/null || npx playwright install chromium --with-deps
+
+      - name: Run multiplayer test
+        run: |
+          node .github/scripts/multiplayer-test.js
+        env:
+          TEST_URL: http://localhost:8080/
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multiplayer-screenshots
+          path: /tmp/mp-*.png
