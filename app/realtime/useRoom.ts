@@ -159,10 +159,15 @@ export function useRoom({ code, role, deck, template, maxPlayers = 4, onHostLeft
     // (Cheap, tiny decks — correctness over bandwidth.)
     for (const p of game.players) {
       if (p.isBot) continue;
-      send('hand', { to: p.id, data: { hand: p.hand } });
+      if (p.id === playerId) {
+        // Host: update own hand directly (network send doesn't loop back).
+        setMyHand(p.hand);
+      } else {
+        send('hand', { to: p.id, data: { hand: p.hand } });
+      }
     }
     setPublicState(toPublicState(game, status, seqRef.current));
-  }, [send]);
+  }, [send, playerId]);
 
   const broadcastLobby = useCallback(
     (players: LobbyPlayer[], phase: LobbyInfo['phase']) => {
