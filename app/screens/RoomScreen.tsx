@@ -199,9 +199,44 @@ function RoomLobby({ code, role, room }: { code: string; role: RoomRole; room: R
         <Text variant="caption" color={colors.textSecondary}>
           {t.room.codeLabel}
         </Text>
-        <Text variant="h1" style={{ letterSpacing: 6, marginVertical: spacing.xs }} testID="room-code">
-          {code}
-        </Text>
+        <Pressable
+          onPress={() => {
+            try {
+              // Copy room code to clipboard for easy sharing
+              if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(code);
+              }
+            } catch {}
+          }}
+          accessibilityLabel={`Copy room code ${code}`}
+          style={{
+            backgroundColor: colors.surfaceAlt,
+            borderRadius: 16,
+            paddingVertical: spacing.lg,
+            paddingHorizontal: spacing.md,
+            marginVertical: spacing.sm,
+            alignItems: 'center',
+            borderWidth: 2,
+            borderColor: colors.accent,
+            borderStyle: 'dashed',
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 48,
+              lineHeight: 56,
+              fontWeight: '800',
+              letterSpacing: 8,
+              color: colors.textPrimary,
+            }}
+            testID="room-code"
+          >
+            {code}
+          </Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
+            {t.room.tapToCopy ?? 'Tap to copy'}
+          </Text>
+        </Pressable>
         <Text variant="bodySmall" color={colors.textSecondary}>
           {t.room.codeHint}
         </Text>
@@ -272,7 +307,7 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
   // Move timer: 30s per turn. Resets when my turn starts; auto-plays at zero.
   const TURN_SECONDS = 30;
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const turnKey = `${ps.turn}:${ps.round}`;
+  const turnKey = `${ps.turnPlayerId}:${ps.round}`;
 
   useEffect(() => {
     if (!room.isMyTurn || ps.phase !== 'playing') {

@@ -142,6 +142,7 @@ export const ar: Strings = {
     guestTitle: 'انضم إلى طاولة',
     codeLabel: 'رمز الغرفة — شاركه مع أصدقائك',
     codeHint: 'يدخل الأصدقاء هذا الرمز للانضمام. لا حاجة لحساب.',
+    tapToCopy: 'انقر للنسخ',
     players: 'اللاعبون',
     waitingPlayers: 'بانتظار انضمام اللاعبين…',
     connecting: 'جارٍ الاتصال…',
