@@ -123,7 +123,7 @@ export function HouseTableRow({ table, index, onJoin }: Props) {
           <View style={{ flex: 1, gap: spacing.xs }}>
             <Text variant="bodyBold">{table.name}</Text>
             <Text variant="caption" color={colors.textSecondary}>
-              {deckLabel} • {templateLabel}
+              {deckLabel}
             </Text>
             <Text variant="caption" color={colors.textTertiary} numberOfLines={2}>
               {summary.short}

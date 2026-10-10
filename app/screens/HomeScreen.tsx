@@ -69,7 +69,7 @@ function DailyGiftCard() {
         >
           <Text style={{ fontSize: 24 }}>🎁</Text>
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
+        <View style={{ flex: 1, minWidth: 0, marginRight: spacing.xs }}>
           <Text variant="bodyBold" numberOfLines={1}>{t.home.dailyGift}</Text>
           <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
             {t.home.streakDays.replace('{n}', String(streak))}
@@ -77,7 +77,7 @@ function DailyGiftCard() {
         </View>
         {canClaimDaily ? (
           <Button
-            title={t.home.claim.replace('{n}', String(DAILY_COINS))}
+            title={`+${DAILY_COINS}`}
             size="sm"
             onPress={onClaim}
           />

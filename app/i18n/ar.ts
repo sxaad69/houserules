@@ -189,7 +189,7 @@ export const ar: Strings = {
   },
   ads: {
     sponsored: 'إعلان',
-    placeholder: 'مساحة إعلانية — AdMob',
+    placeholder: 'إعلان',
   },
   profile: {
     title: 'حسابي',

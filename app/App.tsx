@@ -75,6 +75,9 @@ function Tabs() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
+        tabBarLabelStyle: {
+          fontSize: 11,
+        },
         tabBarIcon: ({ color, size }) => (
           <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
         ),

@@ -187,7 +187,7 @@ export const en = {
   },
   ads: {
     sponsored: 'Ad',
-    placeholder: 'Ad placeholder — AdMob',
+    placeholder: 'Advertisement',
   },
   profile: {
     title: 'Profile',
