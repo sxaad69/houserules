@@ -203,13 +203,20 @@ function AppShell() {
 
 export default function App() {
   // Dismiss the web boot splash once React has mounted (native uses expo-splash-screen).
+  // Minimum 2.2s display so the Amber Fan artwork is actually seen.
   React.useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
       const el = document.getElementById('hr-splash');
       if (el) {
-        el.style.transition = 'opacity 0.6s ease';
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 650);
+        const minUntil = Date.now() + 2200;
+        const dismiss = () => {
+          el.style.transition = 'opacity 0.6s ease';
+          el.style.opacity = '0';
+          setTimeout(() => el.remove(), 650);
+        };
+        const wait = minUntil - Date.now();
+        if (wait > 0) setTimeout(dismiss, wait);
+        else dismiss();
       }
     }
   }, []);
