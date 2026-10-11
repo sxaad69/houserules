@@ -32,11 +32,25 @@ async function newPlayer(browser, name) {
   // Cold CI runners hydrate slowly: wait for real UI markers instead of fixed sleeps.
   // (2026-10-11: the 8s click on "Have a room code" timed out because the silent
   // Skip click below had missed on a slow runner, leaving the app on onboarding.)
+  page.on('console', msg => {
+    if (msg.type() === 'error') console.log(`  CONSOLE ERROR: ${msg.text().slice(0, 150)}`);
+  });
   try {
     await page.getByText(/Skip/i).first().waitFor({ timeout: 45000 });
     await page.getByText(/Skip/i).first().click({ timeout: 10000 });
-  } catch { /* already past onboarding */ }
-  await page.getByText(/Open Tables|Quick Play/i).first().waitFor({ timeout: 30000 });
+  } catch (e) {
+    console.log(`  Skip not found, taking debug screenshot...`);
+    await page.screenshot({ path: `/tmp/mp-debug-${name}-noskip.png` });
+    const bodyLen = await page.evaluate(() => document.body.textContent.length);
+    console.log(`  Body text length: ${bodyLen}`);
+  }
+  try {
+    await page.getByText(/Open Tables|Quick Play/i).first().waitFor({ timeout: 30000 });
+  } catch (e) {
+    console.log(`  Home not found, taking debug screenshot...`);
+    await page.screenshot({ path: `/tmp/mp-debug-${name}-nohome.png` });
+    throw e;
+  }
   return { page, errors, name };
 }
 
