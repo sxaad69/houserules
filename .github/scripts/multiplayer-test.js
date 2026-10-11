@@ -28,21 +28,28 @@ async function newPlayer(browser, name) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message.slice(0, 100)));
-  await page.goto(URL);
-  await page.waitForTimeout(5000);
-  try { await page.getByText(/Skip/i).first().click({ timeout: 4000 }); } catch {}
-  await page.waitForTimeout(1500);
+  await page.goto(URL, { waitUntil: 'domcontentloaded' });
+  // Cold CI runners hydrate slowly: wait for real UI markers instead of fixed sleeps.
+  // (2026-10-11: the 8s click on "Have a room code" timed out because the silent
+  // Skip click below had missed on a slow runner, leaving the app on onboarding.)
+  try {
+    await page.getByText(/Skip/i).first().waitFor({ timeout: 45000 });
+    await page.getByText(/Skip/i).first().click({ timeout: 10000 });
+  } catch { /* already past onboarding */ }
+  await page.getByText(/Open Tables|Quick Play/i).first().waitFor({ timeout: 30000 });
   return { page, errors, name };
 }
 
 (async () => {
   const browser = await chromium.launch();
   console.log('=== Multiplayer QA ===\n');
+  let host, guest;
+  try {
 
   // HOST: create room
   console.log('HOST: creating room...');
-  const host = await newPlayer(browser, 'host');
-  await host.page.getByText(/Have a room code/i).first().click({ timeout: 8000 });
+  host = await newPlayer(browser, 'host');
+  await host.page.getByText(/Have a room code/i).first().click({ timeout: 15000 });
   await host.page.waitForTimeout(1500);
   await host.page.getByText(/Create Table/i).first().click({ timeout: 8000 });
   await host.page.waitForTimeout(4000);
@@ -63,7 +70,7 @@ async function newPlayer(browser, name) {
 
   // GUEST: join room
   console.log('\nGUEST: joining...');
-  const guest = await newPlayer(browser, 'guest');
+  guest = await newPlayer(browser, 'guest');
   await guest.page.getByText(/Have a room code/i).first().click({ timeout: 8000 });
   await guest.page.waitForTimeout(1500);
   await guest.page.locator('input').first().click();
@@ -161,6 +168,12 @@ async function newPlayer(browser, name) {
   if (issues.length) {
     console.log('Failed:', issues.join(', '));
     process.exit(1);
+  }
+  } catch (e) {
+    console.log('\nFATAL:', String((e && e.message) || e).split('\n')[0]);
+    try { if (host && host.page) await host.page.screenshot({ path: '/tmp/mp-fatal-host.png' }); } catch {}
+    try { if (guest && guest.page) await guest.page.screenshot({ path: '/tmp/mp-fatal-guest.png' }); } catch {}
+    process.exit(2);
   }
   await browser.close();
 })();
