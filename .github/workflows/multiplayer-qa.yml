@@ -34,13 +34,19 @@ jobs:
           node scripts/inject-web-splash.js dist
 
       - name: Serve web build
-        working-directory: app/dist
+        working-directory: app
         run: |
+          # NOTE: inject-web-splash.js rewrites asset paths to the /houserules/
+          # GitHub Pages subpath, so the QA server must serve dist under that
+          # same subpath (serving at root 404s the bundle → blank page).
+          mkdir -p /tmp/qa-www
+          ln -sfn "$PWD/dist" /tmp/qa-www/houserules
+          cd /tmp/qa-www
           python3 -m http.server 8080 &
           SERVER_PID=$!
           echo $SERVER_PID > /tmp/server.pid
           for i in $(seq 1 10); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || echo "000")
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/houserules/ || echo "000")
             echo "Attempt $i: HTTP $CODE"
             if [ "$CODE" = "200" ]; then break; fi
             sleep 2
@@ -56,7 +62,7 @@ jobs:
         run: |
           node .github/scripts/multiplayer-test.js
         env:
-          TEST_URL: http://localhost:8080/
+          TEST_URL: http://localhost:8080/houserules/
 
       - name: Upload screenshots
         if: always()
