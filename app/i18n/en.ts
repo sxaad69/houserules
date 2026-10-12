@@ -141,6 +141,7 @@ export const en = {
     codeLabel: 'Room code — share it with friends',
     codeHint: 'Friends enter this code to join. No account needed.',
     tapToCopy: 'Tap to copy',
+    copied: 'Copied ✓',
     players: 'Players',
     waitingPlayers: 'Waiting for players to join…',
     connecting: 'Connecting…',

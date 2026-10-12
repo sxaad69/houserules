@@ -191,6 +191,26 @@ function RoomLobby({ code, role, room }: { code: string; role: RoomRole; room: R
   const { t } = useStrings();
   const { colors, spacing, radii } = useTheme();
   const players = room.lobby?.players ?? [];
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (copiedTimer.current) clearTimeout(copiedTimer.current);
+  }, []);
+
+  const copyCode = async () => {
+    try {
+      // Web: navigator.clipboard. Native: no clipboard API without expo-clipboard
+      // (follow-up: add expo-clipboard at the SDK-matched version before the Play build).
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        if (copiedTimer.current) clearTimeout(copiedTimer.current);
+        copiedTimer.current = setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // copy failed: stay silent rather than claim success
+    }
+  };
 
   return (
     <Screen>
@@ -200,15 +220,9 @@ function RoomLobby({ code, role, room }: { code: string; role: RoomRole; room: R
           {t.room.codeLabel}
         </Text>
         <Pressable
-          onPress={() => {
-            try {
-              // Copy room code to clipboard for easy sharing
-              if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                navigator.clipboard.writeText(code);
-              }
-            } catch {}
-          }}
+          onPress={copyCode}
           accessibilityLabel={`Copy room code ${code}`}
+          accessibilityHint={copied ? (t.room.copied ?? 'Copied!') : undefined}
           style={{
             backgroundColor: colors.surfaceAlt,
             borderRadius: 16,
@@ -233,8 +247,12 @@ function RoomLobby({ code, role, room }: { code: string; role: RoomRole; room: R
           >
             {code}
           </Text>
-          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
-            {t.room.tapToCopy ?? 'Tap to copy'}
+          <Text
+            variant="caption"
+            color={copied ? colors.success ?? colors.accent : colors.textSecondary}
+            style={{ marginTop: spacing.xs, fontWeight: copied ? '700' : undefined }}
+          >
+            {copied ? (t.room.copied ?? 'Copied!') : (t.room.tapToCopy ?? 'Tap to copy')}
           </Text>
         </Pressable>
         <Text variant="bodySmall" color={colors.textSecondary}>

@@ -143,6 +143,7 @@ export const ar: Strings = {
     codeLabel: 'رمز الغرفة — شاركه مع أصدقائك',
     codeHint: 'يدخل الأصدقاء هذا الرمز للانضمام. لا حاجة لحساب.',
     tapToCopy: 'انقر للنسخ',
+    copied: 'تم النسخ ✓',
     players: 'اللاعبون',
     waitingPlayers: 'بانتظار انضمام اللاعبين…',
     connecting: 'جارٍ الاتصال…',
