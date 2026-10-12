@@ -578,14 +578,28 @@ export function TableScreen({ route, navigation }: Props) {
             {/* Center piles */}
             <View style={{ position: 'absolute', top: '42%', alignSelf: 'center', alignItems: 'center' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.lg }}>
-                {/* Draw pile */}
+                {/* Draw pile — glows when player must draw (no playable cards) */}
                 <Pressable
                   onPress={onDraw}
                   disabled={!isHumanTurn}
                   accessibilityLabel={t.table.draw}
                   accessibilityRole="button"
                   hitSlop={spacing.sm}
-                  style={{ opacity: isHumanTurn ? 1 : 0.85, alignItems: 'center' }}
+                  style={{
+                    opacity: isHumanTurn ? 1 : 0.85,
+                    alignItems: 'center',
+                    ...(mustDraw ? {
+                      shadowColor: colors.accent,
+                      shadowOpacity: 0.9,
+                      shadowRadius: 16,
+                      shadowOffset: { width: 0, height: 0 },
+                      elevation: 8,
+                      borderRadius: radii.md,
+                      borderWidth: 3,
+                      borderColor: colors.accent,
+                      padding: 4,
+                    } : null),
+                  }}
                 >
                   <PlayingCard
                     card={{ id: 'draw-stub', deck, color: null, suit: null, rank: '', action: null, animal: null }}
@@ -610,14 +624,14 @@ export function TableScreen({ route, navigation }: Props) {
                     <View
                       style={{
                         marginTop: 4,
-                        backgroundColor: colors.accent,
+                        backgroundColor: mustDraw ? colors.accent : 'rgba(0,0,0,0.5)',
                         borderRadius: radii.full,
                         paddingHorizontal: spacing.md,
-                        paddingVertical: 4,
+                        paddingVertical: 6,
                       }}
                     >
-                      <Text variant="caption" style={{ color: colors.textInverse, fontWeight: '700' }}>
-                        {t.table.draw}
+                      <Text variant="caption" style={{ color: mustDraw ? colors.textInverse : '#FFFFFF', fontWeight: '800', fontSize: 14 }}>
+                        {mustDraw ? `👆 ${t.table.draw}` : t.table.draw}
                       </Text>
                     </View>
                   )}
