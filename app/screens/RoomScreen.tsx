@@ -318,6 +318,8 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
   const theme = TABLE_THEMES[ps.deckKind] ?? TABLE_THEMES.classic52;
   const opponents = ps.players.filter((p) => p.id !== playerId);
   const legal = new Set(ps.legalByPlayer[playerId] ?? []);
+  /** No playable cards and nothing forced — the player must tap the draw pile. */
+  const mustDraw = room.isMyTurn && ps.pendingDraw === 0 && legal.size === 0;
   const me = ps.players.find((p) => p.id === playerId);
   const isWild = (c: Card) => c.action === 'wild' || c.action === 'wild4';
   const [socialOpen, setSocialOpen] = useState(false);
@@ -434,7 +436,21 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
             testID="draw-pile"
             accessibilityLabel={t.table.draw}
             accessibilityRole="button"
-            style={{ opacity: room.isMyTurn ? 1 : 0.45 }}
+            style={{
+              opacity: room.isMyTurn ? 1 : 0.45,
+              alignItems: 'center',
+              ...(mustDraw ? {
+                shadowColor: colors.accent,
+                shadowOpacity: 0.9,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 0 },
+                elevation: 8,
+                borderRadius: radii.md,
+                borderWidth: 3,
+                borderColor: colors.accent,
+                padding: 4,
+              } : null),
+            }}
           >
             <PlayingCard
               card={{ id: 'draw', deck: ps.deckKind, color: null, suit: null, rank: '', action: null, animal: null }}
@@ -444,6 +460,21 @@ function NetTable({ room, navigation }: { room: ReturnType<typeof useRoom>; navi
             <View style={{ position: 'absolute', top: -8, right: -8, minWidth: 24, height: 24, borderRadius: 12, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
               <Text variant="caption" style={{ color: colors.textInverse, fontWeight: '700' }}>{ps.drawCount}</Text>
             </View>
+            {room.isMyTurn && (
+              <View
+                style={{
+                  marginTop: 4,
+                  backgroundColor: mustDraw ? colors.accent : 'rgba(0,0,0,0.5)',
+                  borderRadius: radii.full,
+                  paddingHorizontal: spacing.md,
+                  paddingVertical: 4,
+                }}
+              >
+                <Text variant="caption" style={{ color: mustDraw ? colors.textInverse : '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                  {mustDraw ? `👆 ${t.table.draw}` : t.table.draw}
+                </Text>
+              </View>
+            )}
           </Pressable>
           {ps.discardTop && <PlayingCard card={ps.discardTop} size="md" />}
         </View>
